@@ -1,0 +1,6 @@
+bpe
+ffmpeg
+pydub
+pytorch_lightning
+torch
+torchaudio
