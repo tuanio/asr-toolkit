@@ -5,6 +5,7 @@ from typing import List, Dict
 from loss import CTCLoss, CrossEntropyLoss, RNNTLoss
 from text import TextProcess
 import jiwer
+from typing import Tuple, List
 
 
 class BaseModel(pl.LightningModule):
@@ -15,7 +16,9 @@ class BaseModel(pl.LightningModule):
         optimizer = optim.Adam(self.parameters(), lr=self.lr, **self.cfg.optim)
         return optimizer
 
-    def get_wer(self, targets, outputs):
+    def get_wer(
+        self, targets: Tensor, outputs: Tensor
+    ) -> Tuple[List[str], List[str], float]:
         argmax = outputs.argmax(-1)
         label_sequences = [self.text_process.int2text(sent) for sent in targets]
         predict_sequences = [self.text_process.decode(sent) for sent in argmax]
@@ -52,7 +55,7 @@ class CTCModel(BaseModel):
         predict = self.text_process.decode(output.argmax(-1))
         return predict
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self.encoder(inputs, input_lengths)
         loss = self.criterion(
@@ -62,7 +65,7 @@ class CTCModel(BaseModel):
         self.log("train loss", loss)
         self.log("lr", self.lr)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self.encoder(inputs, input_lengths)
         loss = self.criterion(
@@ -77,7 +80,7 @@ class CTCModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self.encoder(inputs, input_lengths)
         loss = self.criterion(
@@ -115,7 +118,7 @@ class AEDModel(BaseModel):
         self.log_idx = log_idx
         self.save_hyperparameters()
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
@@ -125,7 +128,7 @@ class AEDModel(BaseModel):
         self.log("train loss", loss)
         self.log("lr", self.lr)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
@@ -140,7 +143,7 @@ class AEDModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
@@ -278,7 +281,7 @@ class RNNTModel(BaseModel):
 
         return outputs
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tensor, batch_idx: int):
         (
             inputs,
             input_lengths,
@@ -298,7 +301,7 @@ class RNNTModel(BaseModel):
 
         self.log("train loss", loss)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tensor, batch_idx: int):
         (
             inputs,
             input_lengths,
@@ -324,7 +327,7 @@ class RNNTModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tensor, batch_idx: int):
         (
             inputs,
             input_lengths,
@@ -350,7 +353,9 @@ class RNNTModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
-    def get_wer(self, targets, inputs, input_lengths):
+    def get_wer(
+        self, targets: Tensor, inputs: Tensor, input_lengths: Tensor
+    ) -> Tuple[List[str], List[str], float]:
         predict_sequences = self.recognize(inputs, input_lengths)
         predict_sequences = [
             self.text_process.int2text(sent) for sent in predict_sequences
@@ -389,10 +394,10 @@ class JointCTCAttentionModel(BaseModel):
         self.log_idx = log_idx
         self.save_hyperparameters()
 
-    def criterion(self, ctc_loss, ce_loss) -> Tensor:
+    def criterion(self, ctc_loss: Tensor, ce_loss: Tensor) -> Tensor:
         return self.ctc_lambda * ctc_loss + (1 - self.ctc_lambda) * ce_loss
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
@@ -409,7 +414,7 @@ class JointCTCAttentionModel(BaseModel):
         self.log("train loss", loss)
         self.log("lr", self.lr)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
@@ -431,7 +436,7 @@ class JointCTCAttentionModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)

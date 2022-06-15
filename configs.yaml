@@ -2,4 +2,12 @@ encoder:
   optim:
     ...
   loss:
-    ...
+    ctc:
+      blank: 0
+      zero_infinity: True
+    cross_entropy:
+      reduce: True
+      reduction: mean
+    rnnt:
+      blank: 0
+      reduction: mean
