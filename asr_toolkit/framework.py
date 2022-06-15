@@ -34,7 +34,7 @@ class BaseModel(pl.LightningModule):
         print("=" * 50)
 
 
-class CTC(BaseModel):
+class CTCModel(BaseModel):
     def __init__(
         self, encoder: nn.Module,
     ):
@@ -93,7 +93,7 @@ class CTC(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
 
-class AED(BaseModel):
+class AEDModel(BaseModel):
     """attention-based encoder-decoder"""
 
     def __init__(
@@ -156,7 +156,7 @@ class AED(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
 
-class RNNT(BaseModel):
+class RNNTModel(BaseModel):
     def __init__(
         self,
         encoder: nn.Module,
@@ -362,3 +362,93 @@ class RNNT(BaseModel):
         ]
         wer = torch.mean(wer).item()
         return label_sequences, predict_sequences, wer
+
+
+class JointCTCAttentionModel(BaseModel):
+    """attention-based encoder-decoder"""
+
+    def __init__(
+        self,
+        encoder: nn.Module,
+        decoder: nn.Module,
+        ctc_lambda: float,
+        lr: float,
+        cfg: Dict,
+        text_process: TextProcess,
+        log_idx: int = 100,
+    ):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.cfg = cfg
+        self.ctc_criterion = CTCLoss(**cfg.loss.ctc)
+        self.ce_criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
+        self.ctc_lambda = ctc_lambda
+        self.lr = lr
+        self.text_process = text_process
+        self.log_idx = log_idx
+        self.save_hyperparameters()
+
+    def criterion(self, ctc_loss, ce_loss) -> Tensor:
+        return self.ctc_lambda * ctc_loss + (1 - self.ctc_lambda) * ce_loss
+
+    def training_step(self, batch, batch_idx):
+        inputs, input_lengths, targets, target_lengths = batch
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        ctc_loss = self.ctc_criterion(
+            encoder_outputs.permute(1, 0, 2),
+            targets,
+            encoder_output_lengths,
+            target_lengths,
+        )
+        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        loss = self.criterion(ctc_loss, ce_loss)
+
+        self.log("train loss", loss)
+        self.log("lr", self.lr)
+
+    def validation_step(self, batch, batch_idx):
+        inputs, input_lengths, targets, target_lengths = batch
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        ctc_loss = self.ctc_criterion(
+            encoder_outputs.permute(1, 0, 2),
+            targets,
+            encoder_output_lengths,
+            target_lengths,
+        )
+        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        loss = self.criterion(ctc_loss, ce_loss)
+
+        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+
+        self.log("validation loss", loss)
+        self.log("validation wer", wer)
+
+        if batch_idx % self.log_idx == 0:
+            self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+    def test_step(self, batch, batch_idx):
+        inputs, input_lengths, targets, target_lengths = batch
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        ctc_loss = self.ctc_criterion(
+            encoder_outputs.permute(1, 0, 2),
+            targets,
+            encoder_output_lengths,
+            target_lengths,
+        )
+        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        loss = self.criterion(ctc_loss, ce_loss)
+
+        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+
+        self.log("test loss", loss)
+        self.log("test wer", wer)
+
+        if batch_idx % self.log_idx == 0:
+            self.log_output(predict_sequences[0], label_sequences[0], wer)

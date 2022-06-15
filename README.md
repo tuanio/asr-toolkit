@@ -8,3 +8,5 @@
 ## Decoder:
 - Input: `targets`, `target_lengths`, `encoder_outputs` (optional)
 - Output: `decoder_outputs`
+
+- Nếu có `encoder_outputs` thì mới sử dụng attention
