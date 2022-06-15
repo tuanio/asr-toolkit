@@ -41,7 +41,7 @@ class CTCModel(BaseModel):
         super().__init__()
         self.encoder = encoder
         self.cfg = cfg
-        self.criterion = CTCLoss(**cfg.loss)
+        self.criterion = CTCLoss(**cfg.loss.ctc)
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
@@ -109,7 +109,7 @@ class AEDModel(BaseModel):
         self.encoder = encoder
         self.decoder = decoder
         self.cfg = cfg
-        self.criterion = CrossEntropyLoss(**cfg.loss)
+        self.criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
         self.lr = lr
         self.text_process = text_process
         self.log_idx = log_idx
@@ -170,7 +170,7 @@ class RNNTModel(BaseModel):
         self.decoder = decoder
 
         self.cfg = cfg
-        self.criterion = RNNTLoss(**cfg.loss)
+        self.criterion = RNNTLoss(**cfg.loss.rnnt)
         self.lr = lr
         self.text_process = text_process
         self.log_idx = log_idx
