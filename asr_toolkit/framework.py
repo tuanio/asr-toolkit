@@ -117,7 +117,7 @@ class AEDModel(BaseModel):
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
-
+    
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
@@ -178,6 +178,11 @@ class RNNTModel(BaseModel):
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor):
+        predict = self.recognize(inputs, input_lengths)
+        predict = self.text_process.int2text(predict)
+        return predict
 
     def joint(self, encoder_outputs: Tensor, decoder_outputs: Tensor) -> Tensor:
         """
