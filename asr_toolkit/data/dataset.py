@@ -8,6 +8,7 @@ import pandas as pd
 from pathlib import Path
 from utils import mp3ToWav
 
+
 class VivosDataset(Dataset):
     def __init__(self, root: str = "", subset: str = "train", n_fft: int = 200):
         super().__init__()
@@ -46,34 +47,39 @@ class VivosDataset(Dataset):
         trans = self.transcripts[filename].lower()
 
         return specs, trans
+
+
 class FPTOpenData(Dataset):
-    def __init__(self,root:str="",n_fft: int = 200):
+    def __init__(self, root: str = "", n_fft: int = 200):
         self.root = root
         self.wav = list(Path(self.root).glob("*.wav"))
-        if self.wav ==[]:
+        if self.wav == []:
             print("không có .wav trong path chọn định dạng .mp3")
             mp3 = list(Path(self.root).glob("*.mp3"))
-            self.wav =  [mp3ToWav(mp3_path) for mp3_path in mp3] #conver and add new path
-        
+            self.wav = [
+                mp3ToWav(mp3_path) for mp3_path in mp3
+            ]  # conver and add new path
+
         script = list(Path(root).glob("*.csv"))
         assert script != [], "khong tim thay script"
-        transcript =  pd.read_csv(script[0])
-        transcript.name = transcript.name.apply(lambda x: Path(self.root,x))
-        self.transcript = transcript[['name','trans']]
+        transcript = pd.read_csv(script[0])
+        transcript.name = transcript.name.apply(lambda x: Path(self.root, x))
+        self.transcript = transcript[["name", "trans"]]
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
-        
+
     def __len__(self):
         return len(self.wav)
-    
-    def __getitem__(self, index:int) :
+
+    def __getitem__(self, index: int):
         filepath, trans = self.transcript.iloc[index].values
-        print(filepath,trans)
+        print(filepath, trans)
         wave, sr = torchaudio.load(filepath)
         specs = self.feature_transform(wave)  # channel, feature, time
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
-    
+
+
 class ComposeDataset(Dataset):
     """
         this dataset aim to load:
@@ -152,7 +158,8 @@ class ComposeDataset(Dataset):
 
         return specs, trans
 
-if __name__ == '__main__': 
+
+if __name__ == "__main__":
     path = "D:/2022/Python/ARS/data/FPTOpenData"
     fpt = FPTOpenData(path)
     print(fpt[20])

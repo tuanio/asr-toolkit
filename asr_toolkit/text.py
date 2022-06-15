@@ -16,14 +16,14 @@ class TextProcess(ABC):
     def __init__(self):
         self.blank_label = 0
 
-    def decode(self, arg_maxes: torch.Tensor):
+    def decode(self, argmax: torch.Tensor):
         """
             decode greedy with collapsed repeat
         """
         decode = []
-        for i, index in enumerate(arg_maxes):
+        for i, index in enumerate(argmax):
             if index != self.blank_label:
-                if i != 0 and index == arg_maxes[i - 1]:
+                if i != 0 and index == argmax[i - 1]:
                     continue
                 decode.append(index.item())
         return self.int2text(decode)

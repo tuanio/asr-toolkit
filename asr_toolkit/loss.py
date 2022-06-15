@@ -8,8 +8,8 @@ class CrossEntropyLoss(nn.Module):
         super().__init__()
         self.loss = nn.CrossEntropyLoss(**kwargs)
 
-    def forward(self, input: Tensor, target: Tensor) -> Tensor:
-        return self.loss(input, target)
+    def forward(self, inputs: Tensor, targets: Tensor) -> Tensor:
+        return self.loss(inputs, targets)
 
 
 class CTCLoss(nn.Module):
