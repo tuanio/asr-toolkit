@@ -1,4 +1,8 @@
 encoder:
+  type: transformer
+  hyp:
+    dim: 512
+    
   optim:
     ...
   loss:

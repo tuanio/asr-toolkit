@@ -10,3 +10,5 @@
 - Output: `decoder_outputs`
 
 - Nếu có `encoder_outputs` thì mới sử dụng attention
+
+Với mỗi lớp `encoder` và `decoder` thì đều phải có tham số `output_dim`

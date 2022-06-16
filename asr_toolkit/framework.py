@@ -38,26 +38,24 @@ class BaseModel(pl.LightningModule):
 
 
 class CTCModel(BaseModel):
-    def __init__(
-        self, encoder: nn.Module,
-    ):
+    def __init__(self, encoder: nn.Module, n_class: int):
         super().__init__()
         self.encoder = encoder
+        self.out = nn.Linear(encoder.output_dim, n_class)
         self.cfg = cfg
         self.criterion = CTCLoss(**cfg.loss.ctc)
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
 
-    def forward(self, inputs, input_lengths):
-        # encoder recognize (logits tensor or inputs and input length)
-        output = self.encoder(inputs, input_lengths)
-        predict = self.text_process.decode(output.argmax(-1))
-        return predict
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        return outputs, output_lengths
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs, output_lengths = self(inputs, input_lengths)
+
         loss = self.criterion(
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
@@ -67,7 +65,8 @@ class CTCModel(BaseModel):
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs, output_lengths = self(inputs, input_lengths)
+
         loss = self.criterion(
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
@@ -82,7 +81,8 @@ class CTCModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs, output_lengths = self(inputs, input_lengths)
+
         loss = self.criterion(
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
@@ -103,6 +103,7 @@ class AEDModel(BaseModel):
         self,
         encoder: nn.Module,
         decoder: nn.Module,
+        n_class: int,
         lr: float,
         cfg: Dict,
         text_process: TextProcess,
@@ -111,29 +112,34 @@ class AEDModel(BaseModel):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.out = nn.Linear(decoder.output_dim, n_class)
         self.cfg = cfg
         self.criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
         self.lr = lr
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
-    
-    def training_step(self, batch: Tensor, batch_idx: int):
-        inputs, input_lengths, targets, target_lengths = batch
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor, targets: Tensor, target_lengths: Tensor):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        outputs = self.out(decoder_outputs)
+        return outputs
 
-        loss = self.criterion(decoder_outputs, targets)
+    def training_step(self, batch: Tensor, batch_idx: int):
+        inputs, input_lengths, targets, target_lengths = batch
+        outputs = self(inputs, input_lengths, targets, target_lengths)
+
+        loss = self.criterion(outputs, targets)
 
         self.log("train loss", loss)
         self.log("lr", self.lr)
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        outputs = self(inputs, input_lengths, targets, target_lengths)
 
-        loss = self.criterion(decoder_outputs, targets)
+        loss = self.criterion(outputs, targets)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
 
@@ -145,10 +151,9 @@ class AEDModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        outputs = self(inputs, input_lengths, targets, target_lengths)
 
-        loss = self.criterion(decoder_outputs, targets)
+        loss = self.criterion(outputs, targets)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
 
@@ -164,6 +169,7 @@ class RNNTModel(BaseModel):
         self,
         encoder: nn.Module,
         decoder: nn.Module,
+        n_class: int,
         lr: float,
         cfg: Dict,
         text_process: TextProcess,
@@ -171,18 +177,33 @@ class RNNTModel(BaseModel):
     ):
         self.encoder = encoder
         self.decoder = decoder
+        self.out = nn.Sequential(
+            nn.Linear(encoder.output_dim + decoder.output_dim, encoder.output_dim),
+            nn.Tanh(),
+            nn.Linear(encoder.output_dim, n_class, bias=False),
+        )
 
         self.cfg = cfg
         self.criterion = RNNTLoss(**cfg.loss.rnnt)
         self.lr = lr
         self.text_process = text_process
         self.log_idx = log_idx
+
         self.save_hyperparameters()
 
-    def forward(self, inputs: Tensor, input_lengths: Tensor):
-        predict = self.recognize(inputs, input_lengths)
-        predict = self.text_process.int2text(predict)
-        return predict
+    def forward(
+        self,
+        inputs: Tensor,
+        input_lengths: Tensor,
+        compute_targets: Tensor,
+        compute_target_lengths: Tensor,
+    ) -> Tensor:
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        decoder_outputs = self.decoder(compute_targets, compute_target_lengths)
+
+        outputs = self.joint(encoder_outputs, decoder_outputs)
+        output_lengths = encoder_output_lengths
+        return outputs, output_lengths
 
     def joint(self, encoder_outputs: Tensor, decoder_outputs: Tensor) -> Tensor:
         """
@@ -206,7 +227,7 @@ class RNNTModel(BaseModel):
             decoder_outputs = decoder_outputs.repeat([1, input_length, 1, 1])
 
         outputs = torch.cat((encoder_outputs, decoder_outputs), dim=-1)
-        outputs = self.fc(outputs)
+        outputs = self.out(outputs)
 
         return outputs
 
@@ -296,13 +317,13 @@ class RNNTModel(BaseModel):
             compute_target_lengths,
         ) = self.get_batch(batch)
 
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths)
+        outputs, output_lengths = self(
+            inputs, input_lengths, compute_targets, compute_target_lengths
+        )
 
-        outputs = self.joint(encoder_outputs, decoder_outputs)
-        output_lengths = encoder_output_lengths
-
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         self.log("train loss", loss)
 
@@ -316,13 +337,13 @@ class RNNTModel(BaseModel):
             compute_target_lengths,
         ) = self.get_batch(batch)
 
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths)
+        outputs, output_lengths = self(
+            inputs, input_lengths, compute_targets, compute_target_lengths
+        )
 
-        outputs = self.joint(encoder_outputs, decoder_outputs)
-        output_lengths = encoder_output_lengths
-
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
 
@@ -342,13 +363,13 @@ class RNNTModel(BaseModel):
             compute_target_lengths,
         ) = self.get_batch(batch)
 
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths)
+        outputs, output_lengths = self(
+            inputs, input_lengths, compute_targets, compute_target_lengths
+        )
 
-        outputs = self.joint(encoder_outputs, decoder_outputs)
-        output_lengths = encoder_output_lengths
-
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
 
@@ -381,6 +402,7 @@ class JointCTCAttentionModel(BaseModel):
         self,
         encoder: nn.Module,
         decoder: nn.Module,
+        n_class: int,
         ctc_lambda: float,
         lr: float,
         cfg: Dict,
@@ -390,6 +412,9 @@ class JointCTCAttentionModel(BaseModel):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.encoder_outputs = nn.Linear(encoder.output_dim, n_class)
+        self.decoder_outputs = nn.Linear(decoder.output_dim, n_class)
+
         self.cfg = cfg
         self.ctc_criterion = CTCLoss(**cfg.loss.ctc)
         self.ce_criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
@@ -399,13 +424,20 @@ class JointCTCAttentionModel(BaseModel):
         self.log_idx = log_idx
         self.save_hyperparameters()
 
+    def forward(self, inputs, input_lengths, targets, target_lengths) -> Tensor:
+        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
+        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        return encoder_outputs, encoder_output_lengths, decoder_outputs
+
     def criterion(self, ctc_loss: Tensor, ce_loss: Tensor) -> Tensor:
         return self.ctc_lambda * ctc_loss + (1 - self.ctc_lambda) * ce_loss
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        encoder_outputs, encoder_output_lengths, decoder_outputs = self(
+            inputs, input_lengths, targets, target_lengths
+        )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
@@ -421,8 +453,10 @@ class JointCTCAttentionModel(BaseModel):
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        encoder_outputs, encoder_output_lengths, decoder_outputs = self(
+            inputs, input_lengths, targets, target_lengths
+        )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
@@ -443,8 +477,10 @@ class JointCTCAttentionModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+
+        encoder_outputs, encoder_output_lengths, decoder_outputs = self(
+            inputs, input_lengths, targets, target_lengths
+        )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
