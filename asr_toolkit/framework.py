@@ -120,7 +120,13 @@ class AEDModel(BaseModel):
         self.log_idx = log_idx
         self.save_hyperparameters()
 
-    def forward(self, inputs: Tensor, input_lengths: Tensor, targets: Tensor, target_lengths: Tensor):
+    def forward(
+        self,
+        inputs: Tensor,
+        input_lengths: Tensor,
+        targets: Tensor,
+        target_lengths: Tensor,
+    ):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
         outputs = self.out(decoder_outputs)
