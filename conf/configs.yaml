@@ -5,6 +5,9 @@ hydra:
 general:
   batch_size: 4
   n_fft: 159 # -> output 80 filterbank for spectrogram
+  lr: 0.001
+  log_idx: 100
+  epochs: 10
 
 text:
   all_types:
@@ -47,17 +50,33 @@ model:
       vgg:
         init_dim: 64
         hide_dim: 128
+  decoder:
+    all_types:
+      - lstm
+      - transformer
+    selected: not_choose
+    hyper:
+      lstm:
+      transformer:
   framework:
     all_types:
       - ctc
       - aed
       - rnnt
       - joint_ctc_attention
+    selected: ctc
     hyper:
       ctc:
+        log_idx: ${general.log_idx}
       aed:
+        lr: ${general.lr}
+        log_idx: ${general.log_idx}
       rnnt:
+        lr: ${general.lr}
+        log_idx: ${general.log_idx}
       joint_ctc_attention:
+        ctc_lambda: 0.4
+        log_idx: ${general.log_idx}
   loss:
     ctc:
       blank: 0
@@ -68,3 +87,20 @@ model:
     rnnt:
       blank: 0
       reduction: mean
+  optim:
+    adam:
+      lr: ${general.lr}
+  lr_scheduler:
+    cosine_anealing:
+      T_max: 100000
+
+trainer:
+  tb_logger:
+    save_dir: tb_logs
+    name: model_logs
+  lr_monitor:
+    logging_interval: step
+  hyper:
+    max_epochs: ${general.epochs}
+    accelerator: auto
+    accumulate_grad_batches: 8

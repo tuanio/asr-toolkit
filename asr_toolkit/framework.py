@@ -14,8 +14,14 @@ class BaseModel(pl.LightningModule):
         super().__init__()
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, **self.cfg.optim)
-        return optimizer
+        optimizer = optim.Adam(self.parameters(), **self.cfg_model.optim.adam)
+        lr_scheduler = {
+            "scheduler": optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, **self.cfg_model.lr_scheduler.cosine_anealing
+            ),
+            "name": "lr_scheduler_logger",
+        }
+        return [optimizer], [lr_scheduler]
 
     def get_wer(
         self, targets: Tensor, outputs: Tensor
@@ -39,12 +45,20 @@ class BaseModel(pl.LightningModule):
 
 
 class CTCModel(BaseModel):
-    def __init__(self, encoder: nn.Module, n_class: int):
+    def __init__(
+        self,
+        encoder: nn.Module,
+        n_class: int,
+        cfg_model: Dict,
+        text_process: TextProcess,
+        log_idx: int = 100,
+    ):
         super().__init__()
         self.encoder = encoder
         self.out = nn.Linear(encoder.output_dim, n_class)
-        self.cfg = cfg
-        self.criterion = CTCLoss(**cfg.loss.ctc)
+        self.criterion = CTCLoss(**cfg_model.loss.ctc)
+
+        self.cfg_model = cfg_model
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
@@ -62,7 +76,6 @@ class CTCModel(BaseModel):
         )
 
         self.log("train loss", loss)
-        self.log("lr", self.lr)
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -105,8 +118,7 @@ class AEDModel(BaseModel):
         encoder: nn.Module,
         decoder: nn.Module,
         n_class: int,
-        lr: float,
-        cfg: Dict,
+        cfg_model: Dict,
         text_process: TextProcess,
         log_idx: int = 100,
     ):
@@ -114,9 +126,9 @@ class AEDModel(BaseModel):
         self.encoder = encoder
         self.decoder = decoder
         self.out = nn.Linear(decoder.output_dim, n_class)
-        self.cfg = cfg
-        self.criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
-        self.lr = lr
+        self.criterion = CrossEntropyLoss(**cfg_model.loss.cross_entropy)
+
+        self.cfg_model = cfg_model
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
@@ -140,7 +152,6 @@ class AEDModel(BaseModel):
         loss = self.criterion(outputs, targets)
 
         self.log("train loss", loss)
-        self.log("lr", self.lr)
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -177,8 +188,7 @@ class RNNTModel(BaseModel):
         encoder: nn.Module,
         decoder: nn.Module,
         n_class: int,
-        lr: float,
-        cfg: Dict,
+        cfg_model: Dict,
         text_process: TextProcess,
         log_idx: int = 100,
     ):
@@ -189,13 +199,11 @@ class RNNTModel(BaseModel):
             nn.Tanh(),
             nn.Linear(encoder.output_dim, n_class, bias=False),
         )
+        self.criterion = RNNTLoss(**cfg_model.loss.rnnt)
 
-        self.cfg = cfg
-        self.criterion = RNNTLoss(**cfg.loss.rnnt)
-        self.lr = lr
+        self.cfg_model = cfg_model
         self.text_process = text_process
         self.log_idx = log_idx
-
         self.save_hyperparameters()
 
     def forward(
@@ -411,8 +419,7 @@ class JointCTCAttentionModel(BaseModel):
         decoder: nn.Module,
         n_class: int,
         ctc_lambda: float,
-        lr: float,
-        cfg: Dict,
+        cfg_model: Dict,
         text_process: TextProcess,
         log_idx: int = 100,
     ):
@@ -422,11 +429,11 @@ class JointCTCAttentionModel(BaseModel):
         self.encoder_outputs = nn.Linear(encoder.output_dim, n_class)
         self.decoder_outputs = nn.Linear(decoder.output_dim, n_class)
 
-        self.cfg = cfg
-        self.ctc_criterion = CTCLoss(**cfg.loss.ctc)
-        self.ce_criterion = CrossEntropyLoss(**cfg.loss.cross_entropy)
+        self.ctc_criterion = CTCLoss(**cfg_model.loss.ctc)
+        self.ce_criterion = CrossEntropyLoss(**cfg_model.loss.cross_entropy)
         self.ctc_lambda = ctc_lambda
-        self.lr = lr
+
+        self.cfg_model = cfg_model
         self.text_process = text_process
         self.log_idx = log_idx
         self.save_hyperparameters()
@@ -456,7 +463,6 @@ class JointCTCAttentionModel(BaseModel):
         loss = self.criterion(ctc_loss, ce_loss)
 
         self.log("train loss", loss)
-        self.log("lr", self.lr)
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch

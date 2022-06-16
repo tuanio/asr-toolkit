@@ -26,7 +26,7 @@ class DataModule(pl.LightningDataModule):
         self.text_process = text_process
         self.batch_size = batch_size
 
-        self.save_hyperparameters()
+        self.save_hyperparameters(logger=False)
 
     def train_dataloader(self):
         return DataLoader(
