@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 absl-py==1.1.0
 aiohttp==3.8.1
 aiosignal==1.2.0
@@ -64,3 +65,11 @@ urllib3==1.26.9
 Werkzeug==2.1.2
 yarl==1.7.2
 zipp==3.8.0
+=======
+bpe
+ffmpeg
+pydub
+pytorch_lightning
+torch
+torchaudio
+>>>>>>> dat
