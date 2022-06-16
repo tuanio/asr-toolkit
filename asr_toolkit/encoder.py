@@ -5,13 +5,13 @@ from typing import Tuple
 
 from .modules import Linear
 
-from feed_forward import FeedForwardModule
-from attention import MultiHeadedSelfAttentionModule
-from convolution import (
+from .feed_forward import FeedForwardModule
+from .attention import MultiHeadedSelfAttentionModule
+from .convolution import (
     ConformerConvModule,
     Conv2dSubampling,
 )
-from modules import (
+from .modules import (
     ResidualConnectionModule,
     Linear,
 )
@@ -197,7 +197,6 @@ class Conformer(nn.Module):
     the conformer encoder shown in the paper.
     Args:
         input_dim (int, optional): Dimension of input vector
-        output_dim (int): Dimension of output vector
         encoder_dim (int, optional): Dimension of conformer encoder
         num_encoder_layers (int, optional): Number of conformer blocks
         num_attention_heads (int, optional): Number of attention heads
@@ -219,7 +218,6 @@ class Conformer(nn.Module):
     def __init__(
         self,
         input_dim: int = 80,
-        output_dim: int = 512,
         encoder_dim: int = 512,
         num_encoder_layers: int = 17,
         num_attention_heads: int = 8,
@@ -247,7 +245,7 @@ class Conformer(nn.Module):
             conv_kernel_size=conv_kernel_size,
             half_step_residual=half_step_residual,
         )
-        self.fc = Linear(encoder_dim, output_dim, bias=False)
+        self.output_dim = encoder_dim
 
     def count_parameters(self) -> int:
         """ Count parameters of encoder """
@@ -265,8 +263,74 @@ class Conformer(nn.Module):
                 `FloatTensor` of size ``(batch, seq_length, dimension)``.
             input_lengths (torch.LongTensor): The length of input tensor. ``(batch)``
         Returns:
-            * predictions (torch.FloatTensor): Result of model predictions.
+            * outputs: (torch.FloatTensor): logits of encoder
+            * output_lengths: (torch.LongTensor): length of each sample
         """
-        encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        outputs = self.fc(encoder_outputs)
-        return outputs, encoder_output_lengths
+        outputs, output_lengths = self.encoder(inputs, input_lengths)
+        return outputs, output_lengths
+
+
+class VGGExtractor(nn.Module):
+    """ VGG extractor for ASR described in https://arxiv.org/pdf/1706.02737.pdf"""
+
+    def __init__(self, init_dim: int = 64, hide_dim: int = 128, input_dim: int = 80):
+        super(VGGExtractor, self).__init__()
+        self.init_dim = init_dim
+        self.hide_dim = hide_dim
+        in_channel, freq_dim, output_dim = self.check_dim(input_dim)
+        self.in_channel = in_channel
+        self.freq_dim = freq_dim
+        self.output_dim = output_dim
+
+        self.extractor = nn.Sequential(
+            nn.Conv2d(in_channel, self.init_dim, 3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(self.init_dim, self.init_dim, 3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, stride=2),  # Half-time dimension
+            nn.Conv2d(self.init_dim, self.hide_dim, 3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(self.hide_dim, self.hide_dim, 3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, stride=2),  # Half-time dimension
+        )
+
+    def check_dim(self, input_dim):
+        # Check input dimension, delta feature should be stack over channel.
+        if input_dim % 13 == 0:
+            # MFCC feature
+            return int(input_dim / 13), 13, (13 // 4) * self.hide_dim
+        elif input_dim % 40 == 0:
+            # Fbank feature
+            return int(input_dim / 40), 40, (40 // 4) * self.hide_dim
+        else:
+            raise ValueError(
+                "Acoustic feature dimension for VGG should be 13/26/39(MFCC) or 40/80/120(Fbank) but got "
+                + str(input_dim)
+            )
+
+    def view_input(self, feature, feat_len):
+        # downsample time
+        feat_len = torch.div(feat_len, 4, rounding_mode="floor")
+        # crop sequence s.t. t%4==0
+        if feature.shape[1] % 4 != 0:
+            feature = feature[:, : -(feature.shape[1] % 4), :].contiguous()
+        bs, ts, ds = feature.shape
+        # stack feature according to result of check_dim
+        feature = feature.view(bs, ts, self.in_channel, self.freq_dim)
+        feature = feature.transpose(1, 2)
+
+        return feature, feat_len
+
+    def forward(self, feature: Tensor, feat_len: Tensor) -> Tuple[Tensor, Tensor]:
+        # Feature shape BSxTxD -> BS x CH(num of delta) x T x D(acoustic feature dim)
+        feature, feat_len = self.view_input(feature, feat_len)
+        # Foward
+        feature = self.extractor(feature)
+        # BSx128xT/4xD/4 -> BSxT/4x128xD/4
+        feature = feature.transpose(1, 2)
+        #  BS x T/4 x 128 x D/4 -> BS x T/4 x 32D
+        feature = feature.contiguous().view(
+            feature.shape[0], feature.shape[1], self.output_dim
+        )
+        return feature, feat_len

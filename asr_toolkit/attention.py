@@ -5,8 +5,8 @@ import torch.nn.functional as F
 from torch import Tensor
 from typing import Optional
 
-from embedding import PositionalEncoding
-from modules import Linear
+from .embedding import PositionalEncoding
+from .modules import Linear
 
 
 class RelativeMultiHeadAttention(nn.Module):

@@ -2,10 +2,11 @@ import torch
 from torch import nn, Tensor, optim
 import pytorch_lightning as pl
 from typing import List, Dict
-from loss import CTCLoss, CrossEntropyLoss, RNNTLoss
-from text import TextProcess
 import jiwer
 from typing import Tuple, List
+
+from .loss import CTCLoss, CrossEntropyLoss, RNNTLoss
+from .text import TextProcess
 
 
 class BaseModel(pl.LightningModule):

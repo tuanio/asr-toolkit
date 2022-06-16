@@ -15,3 +15,6 @@ Với mỗi lớp `encoder` và `decoder` thì đều phải có tham số `outp
 
 ## References
 - https://github.com/sooftware/conformer
+
+## Variable
+set HYDRA_FULL_ERROR=1

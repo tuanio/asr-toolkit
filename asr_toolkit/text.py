@@ -51,6 +51,7 @@ class CharacterBased(TextProcess):
         assert self.lang in ["vi", "en"], "Language not found"
         self.vocab = self.origin_vocab[lang]
         self.list_vocab = self.origin_list_vocab[lang]
+        self.n_class = len(self.vocab)
 
     def text2int(self, s: str) -> torch.Tensor:
         return torch.Tensor([self.vocab[i] for i in s.lower()])
@@ -60,9 +61,31 @@ class CharacterBased(TextProcess):
 
 
 class BPEBased(TextProcess):
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        vocab_size=8192,
+        pct_bpe=0.2,
+        word_tokenizer=None,
+        silent=True,
+        ngram_min=2,
+        ngram_max=2,
+        required_tokens=None,
+        strict=False,
+        lowercase=True,
+    ):
         super().__init__()
-        self.encoder = bpe.Encoder(**kwargs)
+        self.encoder = bpe.Encoder(
+            vocab_size,
+            pct_bpe,
+            word_tokenizer,
+            silent,
+            ngram_min,
+            ngram_max,
+            required_tokens,
+            strict,
+            lowercase,
+        )
+        self.n_class = vocab_size
 
     def fit(self, text_corpus: str = ""):
         self.encoder.fit(text_corpus)

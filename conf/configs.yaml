@@ -1,0 +1,70 @@
+hydra:
+  run:
+    dir: ./outputs
+
+general:
+  batch_size: 4
+  n_fft: 159 # -> output 80 filterbank for spectrogram
+
+text:
+  all_types:
+    - char
+    - bpe
+  hyper:
+    char:
+      lang: vi
+    bpe:
+      vocab_size: 1000
+      pct_bpe: 1
+  selected: char
+
+dataset:
+  all_types:
+    - vivos
+  hyper:
+    vivos:
+      root: D:\NCKH 2022\vivos
+      n_fft: ${general.n_fft}
+  selected: vivos
+
+model:
+  encoder:
+    all_types:
+      - vgg
+      - cnn
+      - lstm
+      - transformer
+      - conformer
+    structure:
+      - conformer
+    hyper:
+      general:
+        input_dim: 80 # n_fft // 2 + 1
+      conformer:
+        encoder_dim: 144
+        num_encoder_layers: 16
+        num_attention_heads: 4
+      vgg:
+        init_dim: 64
+        hide_dim: 128
+  framework:
+    all_types:
+      - ctc
+      - aed
+      - rnnt
+      - joint_ctc_attention
+    hyper:
+      ctc:
+      aed:
+      rnnt:
+      joint_ctc_attention:
+  loss:
+    ctc:
+      blank: 0
+      zero_infinity: True
+    cross_entropy:
+      reduce: True
+      reduction: mean
+    rnnt:
+      blank: 0
+      reduction: mean

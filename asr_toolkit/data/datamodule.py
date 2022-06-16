@@ -1,31 +1,36 @@
 import torch
-from utils import TextProcess
 from torch.utils.data import Dataset, DataLoader
 import pytorch_lightning as pl
+
+from asr_toolkit.text import TextProcess
 
 
 class DataModule(pl.LightningDataModule):
     def __init__(
         self,
-        trainset: Dataset,
-        valset: Dataset,
-        testset: Dataset,
-        predict_set: Dataset,
-        text_process: TextProcess,
-        batch_size: int,
+        train_set: Dataset,
+        val_set: Dataset,
+        test_set: Dataset,
+        predict_set: Dataset = None,
+        text_process: TextProcess = None,
+        batch_size: int = 4,
     ):
         super().__init__()
 
-        self.trainset = trainset
-        self.valset = testset
-        self.testset = testset
+        self.train_set = train_set
+        self.val_set = val_set
+        self.test_set = test_set
+        self.predict_set = predict_set
         self.batch_size = batch_size
 
         self.text_process = text_process
+        self.batch_size = batch_size
+
+        self.save_hyperparameters()
 
     def train_dataloader(self):
         return DataLoader(
-            self.trainset,
+            self.train_set,
             batch_size=self.batch_size,
             collate_fn=self._collate_fn,
             shuffle=True,
@@ -34,7 +39,7 @@ class DataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(
-            self.valset,
+            self.val_set,
             batch_size=self.batch_size,
             collate_fn=self._collate_fn,
             pin_memory=True,
@@ -42,7 +47,7 @@ class DataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            self.testset,
+            self.test_set,
             batch_size=self.batch_size,
             collate_fn=self._collate_fn,
             pin_memory=True,
@@ -66,7 +71,6 @@ class DataModule(pl.LightningDataModule):
 
         # batch, time, feature
         specs = torch.nn.utils.rnn.pad_sequence(specs, batch_first=True)
-        specs = specs.unsqueeze(1)  # batch, channel, time, feature
 
         trans = [self.text_process.text2int(s) for s in trans]
         target_lengths = torch.LongTensor([s.size(0) for s in trans])

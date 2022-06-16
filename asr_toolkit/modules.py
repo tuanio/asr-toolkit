@@ -2,6 +2,7 @@ import torch
 from torch import nn, Tensor
 import torch.nn.init as init
 import torch.nn.functional as F
+from typing import Tuple
 
 
 class AdditiveAttention(nn.Module):
