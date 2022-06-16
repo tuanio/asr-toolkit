@@ -46,7 +46,15 @@ class VivosDataset(Dataset):
         trans = self.transcripts[filename].lower()
 
         return specs, trans
-class FPTOpenData(Dataset):# có thể sài cho FPT and nlp_speech_record
+class FPTOpenData(Dataset):
+    '''
+    có thể sài cho FPT or dataset have structure
+    |folder
+    |____script.csv
+    |____file1.wav
+    |____***
+    |____fileN.wav         
+    '''
     def __init__(self,root:str="",n_fft: int = 200):
         super().__init__()
         self.root = root
@@ -77,23 +85,61 @@ class FPTOpenData(Dataset):# có thể sài cho FPT and nlp_speech_record
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
+class  VNPostCastDataset(Dataset):
+    """_summary_
 
-class  VNPostCast(Dataset):
+    Args:
+        Dataset (_type_): _description_
+        use this class for dataset have structure
+        folder
+        |__chunks_audio
+        |   |__folderPostcast1
+        |   |   |__file.wav
+        |   |   |__... 
+        |   |__ . . . 
+        |       
+        |__transcripts
+            |__transforFolder1.csv
+            |__...
+    """
     def __init__(self, root:str="",n_fft: int = 200 ):
         super().__init__()
         self.root = root
+        self.walker = None
+        self.csv = list(Path(root).glob("*/*.csv"))
+        path = [p.parts[-1][:-4] for p in self.csv]
+        print(path[0])
+        self.wav = list(Path(root).glob(r"{}".format(path[0])))
+        print(self.wav)
+        
+        self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
+
+class YoutobeDataset(Dataset):
+    '''
+    có thể sài cho FPT or dataset have structure
+    |folder
+    |__folder     
+    |    |__file1.wav
+    |    |__***
+    |    |__fileN.wav   
+    |__folder
+        |__script.csv      
+    '''
+    def __init__(self,root:str="",n_fft: int = 200):
+        super().__init__()
+        self.root = root
        
-        script = list(Path(root).glob("*/*.csv"))
+        script = list(Path(root).glob("*.csv"))
         assert script != [], "khong tim thay script"
         transcript =  pd.read_csv(script[0])
         transcript.name = transcript.name.apply(lambda x: Path(self.root,x))
         transcript.name = transcript.name.apply(lambda x:Path(str(x)[:-3]+"wav"))
         
         self.transcript = transcript[['name','trans']]
-        self.wav = list(Path(self.root).glob("*.wav"))
+        self.wav = list(Path(self.root).glob("*/*.wav"))
         if self.wav ==[]:
             print("không có .wav trong path chọn định dạng .mp3")
-            mp3 = list(Path(self.root).glob("*.mp3"))
+            mp3 = list(Path(self.root).glob("*/*.mp3"))
             self.transcript = transcript[transcript['name'] in mp3 ]
             self.transcript.name =  [mp3ToWav(mp3_path) for mp3_path in mp3] #conver and add new path
             print(self.transcript.name)
@@ -109,7 +155,6 @@ class  VNPostCast(Dataset):
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
-
         
 class ComposeDataset(Dataset):
     """
@@ -174,6 +219,8 @@ class ComposeDataset(Dataset):
         walker = [load_el_from_path(filepath) for filepath in walker]
 
         return walker
+    def init_FPT(self,root):
+        pass
 
     def __len__(self):
         return len(self.walker)
@@ -190,6 +237,5 @@ class ComposeDataset(Dataset):
         return specs, trans
 
 if __name__ == '__main__': 
-    path = "D:/2022/Python/ARS/data/FPTOpenData"
-    fpt = FPTOpenData(path)
-    print(fpt[20])
+    path = "D:/2022/Python/ARS/data/vietnamese_postcast"
+    vn = VNPostCastDataset(path)
