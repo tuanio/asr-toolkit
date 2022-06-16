@@ -46,20 +46,25 @@ class VivosDataset(Dataset):
         trans = self.transcripts[filename].lower()
 
         return specs, trans
-class FPTOpenData(Dataset):
+class FPTOpenData(Dataset):# có thể sài cho FPT and nlp_speech_record
     def __init__(self,root:str="",n_fft: int = 200):
+        super().__init__()
         self.root = root
-        self.wav = list(Path(self.root).glob("*.wav"))
-        if self.wav ==[]:
-            print("không có .wav trong path chọn định dạng .mp3")
-            mp3 = list(Path(self.root).glob("*.mp3"))
-            self.wav =  [mp3ToWav(mp3_path) for mp3_path in mp3] #conver and add new path
-        
+       
         script = list(Path(root).glob("*.csv"))
         assert script != [], "khong tim thay script"
         transcript =  pd.read_csv(script[0])
         transcript.name = transcript.name.apply(lambda x: Path(self.root,x))
+        transcript.name = transcript.name.apply(lambda x:Path(str(x)[:-3]+"wav"))
+        
         self.transcript = transcript[['name','trans']]
+        self.wav = list(Path(self.root).glob("*.wav"))
+        if self.wav ==[]:
+            print("không có .wav trong path chọn định dạng .mp3")
+            mp3 = list(Path(self.root).glob("*.mp3"))
+            self.transcript = transcript[transcript['name'] in mp3 ]
+            self.transcript.name =  [mp3ToWav(mp3_path) for mp3_path in mp3] #conver and add new path
+            print(self.transcript.name)
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
         
     def __len__(self):
@@ -67,13 +72,45 @@ class FPTOpenData(Dataset):
     
     def __getitem__(self, index:int) :
         filepath, trans = self.transcript.iloc[index].values
-        print(filepath,trans)
         wave, sr = torchaudio.load(filepath)
         specs = self.feature_transform(wave)  # channel, feature, time
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
+
+class  VNPostCast(Dataset):
+    def __init__(self, root:str="",n_fft: int = 200 ):
+        super().__init__()
+        self.root = root
+       
+        script = list(Path(root).glob("*/*.csv"))
+        assert script != [], "khong tim thay script"
+        transcript =  pd.read_csv(script[0])
+        transcript.name = transcript.name.apply(lambda x: Path(self.root,x))
+        transcript.name = transcript.name.apply(lambda x:Path(str(x)[:-3]+"wav"))
+        
+        self.transcript = transcript[['name','trans']]
+        self.wav = list(Path(self.root).glob("*.wav"))
+        if self.wav ==[]:
+            print("không có .wav trong path chọn định dạng .mp3")
+            mp3 = list(Path(self.root).glob("*.mp3"))
+            self.transcript = transcript[transcript['name'] in mp3 ]
+            self.transcript.name =  [mp3ToWav(mp3_path) for mp3_path in mp3] #conver and add new path
+            print(self.transcript.name)
+        self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
+        
+    def __len__(self):
+        return len(self.wav)
     
+    def __getitem__(self, index:int) :
+        filepath, trans = self.transcript.iloc[index].values
+        wave, sr = torchaudio.load(filepath)
+        specs = self.feature_transform(wave)  # channel, feature, time
+        specs = specs.permute(0, 2, 1)  # channel, time, feature
+        specs = specs.squeeze()
+        return specs, trans
+
+        
 class ComposeDataset(Dataset):
     """
         this dataset aim to load:
