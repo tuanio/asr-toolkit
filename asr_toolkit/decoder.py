@@ -46,7 +46,7 @@ class LSTMDecoder(nn.Module):
         """
         embedded = self.embedding(targets)
         outputs, (h, c) = self.lstm(embedded)
-        # output: (batch size, seq len, hidden size)
+        # output: (batch size, seq len, self.output_dim)
         if self.use_attention:
             attn_output, attn_output_weights = self.attention(
                 outputs, encoder_outputs, encoder_outputs
