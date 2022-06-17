@@ -132,25 +132,15 @@ def main(cfg: DictConfig):
     lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
 
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
-    # trainer.fit(model=framework, datamodule=dm)
 
-    inputs, input_lengths, targets, target_lengths = next(iter(dm.train_dataloader()))
-    print(inputs.size())
-    print(input_lengths)
-    print(targets.size())
-    print(target_lengths)
-    outputs = framework(inputs, input_lengths, targets, target_lengths)
+    if cfg.session.train:
+        trainer.fit(model=framework, datamodule=dm)
 
-    print("===")
-    print(outputs.size())
+    if cfg.session.validate:
+        trainer.validate(model=framework, datamodule=dm)
 
+    if cfg.session.test:
+        trainer.test(model=framework, datamodule=dm)
 
 if __name__ == "__main__":
     main()
-    # fn = ComposeDataset(
-    #     fpt_root=r"D:\2022\Python\ARS\data\FPTOpenData",
-    #     podcasts_root=r"D:\2022\Python\ARS\data\vietnamese_podcast",
-    #     self_record_root=r"D:\2022\Python\ARS\data\nlp_speech_record",
-    # )
-
-    # print(len(fn))

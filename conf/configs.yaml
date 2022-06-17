@@ -136,3 +136,8 @@ trainer:
     max_epochs: ${general.epochs}
     accelerator: auto
     accumulate_grad_batches: 8
+
+session:
+  train: False
+  validate: False
+  test: False
