@@ -10,6 +10,7 @@ class LSTMDecoder(nn.Module):
         hidden_size: int,
         num_layers: int,
         use_attention: bool = False,
+        num_attention_heads: int = 1,
         bias: bool = True,
         batch_first: bool = True,
         dropout: float = 0.1,
@@ -29,7 +30,9 @@ class LSTMDecoder(nn.Module):
         self.output_dim = hidden_size + hidden_size * bidirectional
         self.use_attention = use_attention
         if use_attention:
-            self.attention = nn.MultiheadAttention(self.output_dim, num_heads=1)
+            self.attention = nn.MultiheadAttention(
+                self.output_dim, num_heads=num_attention_heads
+            )
 
     def forward(
         self, targets: Tensor, target_lengths: Tensor, encoder_outputs: Tensor

@@ -4,11 +4,14 @@ from asr_toolkit.data.dataset import VivosDataset, ComposeDataset
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
+from asr_toolkit.decoder import LSTMDecoder
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
 import pytorch_lightning as pl
-import hydra
+
+# import hydra
 from omegaconf import OmegaConf, DictConfig
 import argparse
+
 
 from typing import Tuple
 
@@ -89,7 +92,7 @@ def main(cfg: DictConfig):
     encoder = Encoder(cfg_model.encoder)
     decoder = None
     if cfg_model.decoder.selected == "lstm":
-        decoder = ...
+        decoder = LSTMDecoder()
     elif cfg_model.decoder.selected == "transformer":
         decoder = ...
 
