@@ -4,11 +4,11 @@ from asr_toolkit.data.dataset import VivosDataset, ComposeDataset
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
-from asr_toolkit.decoder import LSTMDecoder
+from asr_toolkit.decoder import LSTMDecoder, TransformerDecoder
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
 import pytorch_lightning as pl
 
-# import hydra
+import hydra
 from omegaconf import OmegaConf, DictConfig
 import argparse
 
@@ -92,9 +92,15 @@ def main(cfg: DictConfig):
     encoder = Encoder(cfg_model.encoder)
     decoder = None
     if cfg_model.decoder.selected == "lstm":
-        decoder = LSTMDecoder(**cfg_model.decoder.hyper.lstm)
+        decoder = LSTMDecoder(
+            **cfg_model.decoder.hyper.lstm,
+            n_class=n_class,
+            encoder_output_dim=encoder.output_dim
+        )
     elif cfg_model.decoder.selected == "transformer":
-        decoder = ...
+        decoder = TransformerDecoder(
+            **cfg_model.decoder.hyper.transformer, n_class=n_class
+        )
 
     # create framework
     framework_cfg_dict = dict(
@@ -128,9 +134,18 @@ def main(cfg: DictConfig):
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
     # trainer.fit(model=framework, datamodule=dm)
 
+    inputs, input_lengths, targets, target_lengths = next(iter(dm.train_dataloader()))
+    print(inputs.size())
+    print(input_lengths)
+    print(targets.size())
+    print(target_lengths)
+    outputs = framework(inputs, input_lengths, targets, target_lengths)
+
+    print("===")
+    print(outputs.size())
+
 
 if __name__ == "__main__":
-    print("run")
     main()
     # fn = ComposeDataset(
     #     fpt_root=r"D:\2022\Python\ARS\data\FPTOpenData",

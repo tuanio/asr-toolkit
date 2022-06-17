@@ -113,6 +113,8 @@ class CTCModel(BaseModel):
 class AEDModel(BaseModel):
     """attention-based encoder-decoder"""
 
+    """or use in transformer"""
+
     def __init__(
         self,
         encoder: nn.Module,
@@ -418,7 +420,7 @@ class JointCTCAttentionModel(BaseModel):
         encoder: nn.Module,
         decoder: nn.Module,
         n_class: int,
-        ctc_lambda: float,
+        ctc_weight: float,
         cfg_model: Dict,
         text_process: TextProcess,
         log_idx: int = 100,
@@ -431,7 +433,8 @@ class JointCTCAttentionModel(BaseModel):
 
         self.ctc_criterion = CTCLoss(**cfg_model.loss.ctc)
         self.ce_criterion = CrossEntropyLoss(**cfg_model.loss.cross_entropy)
-        self.ctc_lambda = ctc_lambda
+        self.ctc_weight = ctc_weight
+        self.attention_weight = 1 - self.ctc_weight
 
         self.cfg_model = cfg_model
         self.text_process = text_process
@@ -444,7 +447,7 @@ class JointCTCAttentionModel(BaseModel):
         return encoder_outputs, encoder_output_lengths, decoder_outputs
 
     def criterion(self, ctc_loss: Tensor, ce_loss: Tensor) -> Tensor:
-        return self.ctc_lambda * ctc_loss + (1 - self.ctc_lambda) * ce_loss
+        return self.ctc_weight * ctc_loss + self.attention_weight * ce_loss
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch

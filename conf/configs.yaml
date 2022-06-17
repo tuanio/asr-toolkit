@@ -51,7 +51,7 @@ model:
         init_dim: 64
         hide_dim: 128
       lstm:
-        hidden_size: 128
+        hidden_size: 
         num_layers: 3
         bias: True
         batch_first: True 
@@ -71,36 +71,43 @@ model:
     all_types:
       - lstm
       - transformer
-    selected: not_choose
+    selected: transformer
     hyper:
       lstm:
         hidden_size: 128
         num_layers: 1
         use_attention: True,
-        num_attention_heads: 1,
-        bias: True,
-        batch_first: True,
-        dropout: 0.1,
-        bidirectional: False,
+        num_attention_heads: 1
+        bias: True
+        batch_first: True
+        dropout: 0.1
+        bidirectional: False
       transformer:
+        d_model: ${model.encoder.hyper.transformer.d_model}
+        nhead: 2
+        num_layers: 4
+        dim_feedforward: 128
+        dropout: 0.1
+        activation: relu
+        layer_norm_eps: 1e-05
+        batch_first: True
+        norm_first: False
   framework:
     all_types:
       - ctc
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: ctc
+    selected: aed
     hyper:
       ctc:
         log_idx: ${general.log_idx}
       aed:
-        lr: ${general.lr}
         log_idx: ${general.log_idx}
       rnnt:
-        lr: ${general.lr}
         log_idx: ${general.log_idx}
       joint_ctc_attention:
-        ctc_lambda: 0.4
+        ctc_weight: 0.4
         log_idx: ${general.log_idx}
   loss:
     ctc:
