@@ -95,7 +95,9 @@ def main(cfg: DictConfig):
         decoder = LSTMDecoder(
             **cfg_model.decoder.hyper.lstm,
             n_class=n_class,
-            encoder_output_dim=encoder.output_dim
+            encoder_output_dim=encoder.output_dim,
+            sos_id=text_process.sos_id,
+            eos_id=text_process.eos_id
         )
     elif cfg_model.decoder.selected == "transformer":
         decoder = TransformerDecoder(
@@ -141,6 +143,7 @@ def main(cfg: DictConfig):
 
     if cfg.session.test:
         trainer.test(model=framework, datamodule=dm)
+
 
 if __name__ == "__main__":
     main()

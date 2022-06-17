@@ -16,8 +16,12 @@ class LSTMDecoder(nn.Module):
         batch_first: bool = True,
         dropout: float = 0.1,
         bidirectional: bool = True,
+        sos_id: int = 1,
+        eos_id: int = 2,
     ):
         super().__init__()
+        self.sos_id = sos_id
+        self.eos_id = eos_id
         self.embedding = nn.Embedding(n_class, hidden_size)
         self.lstm = nn.LSTM(
             hidden_size,
@@ -39,26 +43,27 @@ class LSTMDecoder(nn.Module):
             )
 
     def forward(
-        self, targets: Tensor, target_lengths: Tensor, encoder_outputs: Tensor
+        self,
+        targets: Tensor,
+        encoder_outputs: Tensor = None,
+        hidden_state: Tensor = None,
     ) -> Tuple[Tensor, Tensor]:
         """
             input
                 targets: batch of sequence label integer
-                target_lengths: batch of length of each sequence
                 encoder_outputs (optional): output of encoder
                     -> (batch size, seq len, output_dim)
         """
         embedded = self.embedding(targets)
-        outputs, (h, c) = self.lstm(embedded)
+        outputs, hidden_state = self.lstm(embedded, hidden_state)
         outputs = self.output_proj(outputs)
 
         # output: (batch size, seq len, self.output_dim)
-        if self.use_attention:
-            attn_output, attn_output_weights = self.attention(
+        if self.use_attention and encoder_outputs:
+            outputs, attn_output_weights = self.attention(
                 outputs, encoder_outputs, encoder_outputs
             )
-            outputs = attn_output
-        return outputs
+        return outputs, hidden_state
 
 
 class TransformerDecoder(nn.Module):

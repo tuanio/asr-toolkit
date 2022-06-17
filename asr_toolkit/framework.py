@@ -29,10 +29,12 @@ class BaseModel(pl.LightningModule):
         argmax = outputs.argmax(-1)
         label_sequences = [self.text_process.int2text(sent) for sent in targets]
         predict_sequences = [self.text_process.decode(sent) for sent in argmax]
-        wer = [
-            jiwer.wer(truth, hypot)
-            for truth, hypot in zip(label_sequences, predict_sequences)
-        ]
+        wer = torch.Tensor(
+            [
+                jiwer.wer(truth, hypot)
+                for truth, hypot in zip(label_sequences, predict_sequences)
+            ]
+        )
         wer = torch.mean(wer).item()
         return label_sequences, predict_sequences, wer
 
@@ -65,6 +67,7 @@ class CTCModel(BaseModel):
 
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
         outputs, output_lengths = self.encoder(inputs, input_lengths)
+        outputs = self.out(outputs)
         return outputs, output_lengths
 
     def training_step(self, batch: Tensor, batch_idx: int):
@@ -143,7 +146,7 @@ class AEDModel(BaseModel):
         target_lengths: Tensor,
     ):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        decoder_outputs, hidden_state = self.decoder(targets, encoder_outputs)
         outputs = self.out(decoder_outputs)
         return outputs
 
@@ -151,7 +154,8 @@ class AEDModel(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
-        loss = self.criterion(outputs, targets)
+        bz, t, _ = outputs.size()
+        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
 
         self.log("train loss", loss)
 
@@ -159,9 +163,10 @@ class AEDModel(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
-        loss = self.criterion(outputs, targets)
+        bz, t, _ = outputs.size()
+        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -173,9 +178,10 @@ class AEDModel(BaseModel):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
-        loss = self.criterion(outputs, targets)
+        bz, t, _ = outputs.size()
+        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
 
         self.log("test loss", loss)
         self.log("test wer", wer)
@@ -194,6 +200,7 @@ class RNNTModel(BaseModel):
         text_process: TextProcess,
         log_idx: int = 100,
     ):
+        super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.out = nn.Sequential(
@@ -216,11 +223,10 @@ class RNNTModel(BaseModel):
         compute_target_lengths: Tensor,
     ) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(compute_targets, compute_target_lengths)
+        decoder_outputs, hidden_state = self.decoder(compute_targets)
 
         outputs = self.joint(encoder_outputs, decoder_outputs)
-        output_lengths = encoder_output_lengths
-        return outputs, output_lengths
+        return outputs, encoder_output_lengths
 
     def joint(self, encoder_outputs: Tensor, decoder_outputs: Tensor) -> Tensor:
         """
@@ -287,7 +293,7 @@ class RNNTModel(BaseModel):
         for t in range(max_length):
 
             decoder_output, hidden_state = self.decoder(
-                decoder_input, hidden_states=hidden_state
+                decoder_input, hidden_state=hidden_state
             )
             step_output = self.joint(
                 encoder_output[t].view(-1), decoder_output.view(-1)
@@ -358,11 +364,11 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -388,7 +394,9 @@ class RNNTModel(BaseModel):
             outputs, compute_targets, output_lengths, compute_target_lengths
         )
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("test loss", loss)
         self.log("test wer", wer)
@@ -404,10 +412,12 @@ class RNNTModel(BaseModel):
             self.text_process.int2text(sent) for sent in predict_sequences
         ]
         label_sequences = [self.text_process.int2text(sent) for sent in targets]
-        wer = [
-            jiwer.wer(truth, hypot)
-            for truth, hypot in zip(label_sequences, predict_sequences)
-        ]
+        wer = torch.Tensor(
+            [
+                jiwer.wer(truth, hypot)
+                for truth, hypot in zip(label_sequences, predict_sequences)
+            ]
+        )
         wer = torch.mean(wer).item()
         return label_sequences, predict_sequences, wer
 
@@ -443,7 +453,11 @@ class JointCTCAttentionModel(BaseModel):
 
     def forward(self, inputs, input_lengths, targets, target_lengths) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs = self.decoder(targets, target_lengths, encoder_outputs)
+        decoder_outputs, hidden_state = self.decoder(targets, encoder_outputs)
+
+        encoder_outputs = self.encoder_outputs(encoder_outputs)
+        decoder_outputs = self.decoder_outputs(decoder_outputs)
+
         return encoder_outputs, encoder_output_lengths, decoder_outputs
 
     def criterion(self, ctc_loss: Tensor, ce_loss: Tensor) -> Tensor:
@@ -462,7 +476,8 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
-        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        bz, t, _ = decoder_outputs.size()
+        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
         loss = self.criterion(ctc_loss, ce_loss)
 
         self.log("train loss", loss)
@@ -480,7 +495,8 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
-        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        bz, t, _ = decoder_outputs.size()
+        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
@@ -504,7 +520,8 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
-        ce_loss = self.ce_criterion(decoder_outputs, targets)
+        bz, t, _ = decoder_outputs.size()
+        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
