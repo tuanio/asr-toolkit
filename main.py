@@ -92,7 +92,7 @@ def main(cfg: DictConfig):
     encoder = Encoder(cfg_model.encoder)
     decoder = None
     if cfg_model.decoder.selected == "lstm":
-        decoder = LSTMDecoder()
+        decoder = LSTMDecoder(**cfg_model.decoder.hyper.lstm)
     elif cfg_model.decoder.selected == "transformer":
         decoder = ...
 
