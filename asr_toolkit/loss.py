@@ -1,1 +1,1 @@
-# call or implement cross entropy, ctc and rnnt 
+# call or implement cross entropy, ctc and rnnt
