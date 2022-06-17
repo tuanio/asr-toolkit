@@ -9,6 +9,7 @@ import pytorch_lightning as pl
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import argparse
+
 from typing import Tuple
 
 
@@ -130,4 +131,13 @@ if __name__ == "__main__":
         trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
         trainer.fit(model=framework, datamodule=dm)
 
+   
+
+if __name__ == "__main__":
+    print("run")
     main()
+    fn =  ComposeDataset(fpt_root=r'D:\2022\Python\ARS\data\FPTOpenData',podcasts_root=r'D:\2022\Python\ARS\data\vietnamese_podcast',self_record_root=r'D:\2022\Python\ARS\data\nlp_speech_record'
+    )
+    
+    print(len(fn))
+  

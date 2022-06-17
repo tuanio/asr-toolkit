@@ -18,7 +18,7 @@ class TextProcess(ABC):
 
     def decode(self, argmax: torch.Tensor):
         """
-            decode greedy with collapsed repeat
+        decode greedy with collapsed repeat
         """
         decode = []
         for i, index in enumerate(argmax):

@@ -1,4 +1,5 @@
 from ctypes import util
+from mimetypes import init
 import os
 from numpy import record
 
@@ -9,6 +10,7 @@ import torchaudio
 import pandas as pd
 from pathlib import Path
 from asr_toolkit.utils import mp3ToWav
+
 
 
 class VivosDataset(Dataset):
@@ -59,13 +61,12 @@ class FPTOpenData(Dataset):
     |____script.csv
     |____file1.wav
     |____***
-    |____fileN.wav         
+    |____fileN.wav
     """
 
     def __init__(self, root: str = "", n_fft: int = 200):
         super().__init__()
         self.root = root
-
         script = list(Path(root).glob("*.csv"))
         assert script != [], "can't find the csv file script"
         transcript = pd.read_csv(script[0])
@@ -83,7 +84,7 @@ class FPTOpenData(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path
-            print(self.transcript.name)
+           
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
@@ -92,13 +93,15 @@ class FPTOpenData(Dataset):
     def __getitem__(self, index: int):
         filepath, trans = self.transcript.iloc[index].values
         try:
-            wave, sr = torchaudio.load(filepath)
+            wave, sr = torchaudio.load(os.path.normpath(filepath))
+            self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=200)
             specs = self.feature_transform(wave)  # channel, feature, time
             specs = specs.permute(0, 2, 1)  # channel, time, feature
             specs = specs.squeeze()
             return specs, trans
+       
         except:
-            print("didn't find filepath" + filepath)
+            print("didn't find filepath " + str(filepath))
 
 
 class VNpodcastDataset(Dataset):
@@ -111,9 +114,9 @@ class VNpodcastDataset(Dataset):
         |__chunks_audio
         |   |__folderpodcast1
         |   |   |__file.wav
-        |   |   |__... 
-        |   |__ . . . 
-        |       
+        |   |   |__...
+        |   |__ . . .
+        |
         |__transcripts
             |__transforFolder1.csv
             |__...
@@ -151,27 +154,27 @@ class VNpodcastDataset(Dataset):
         return len(self.walker)
 
     def __getitem__(self, index: int):
-        filepath, trans = self.walker[index]
         try:
+            filepath, trans = self.walker[index]
             wave, sr = torchaudio.load(filepath)
             specs = self.feature_transform(wave)  # channel, feature, time
             specs = specs.permute(0, 2, 1)  # channel, time, feature
             specs = specs.squeeze()
             return specs, trans
         except:
-            print("didn't find filepath" + filepath)
+            print("didn't find filepath in index: " + str(index))
 
 
 class YoutobeDataset(Dataset):
     """
     use for FPT dataset or dataset have structure
     |folder
-    |__folder     
+    |__folder
     |    |__file1.wav
     |    |__***
-    |    |__fileN.wav   
+    |    |__fileN.wav
     |__folder
-        |__script.csv      
+         |__script.csv
     """
 
     def __init__(self, root: str = "", n_fft: int = 200):
@@ -180,12 +183,8 @@ class YoutobeDataset(Dataset):
         script = list(Path(root).glob("*/*.csv"))
         assert script != [], "can't find the csv file script"
         transcript = pd.read_csv(script[0], encoding="utf-8")
-        transcript.name = transcript.name.apply(lambda x: Path(self.root, x))
-        transcript.name = transcript.name.apply(lambda x: Path(str(x)[:-3] + "wav"))
-
         self.transcript = transcript[["name", "trans"]]
         self.wav = list(Path(self.root).glob("*/*.wav"))
-        print(self.transcript)
         if self.wav == []:
             print(
                 "can't find file .wav in path we will convert mp3 in this file to wav"
@@ -195,29 +194,32 @@ class YoutobeDataset(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path .wav
-            print(self.transcript.name)
+            
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
         return len(self.wav)
 
     def __getitem__(self, index: int):
-        filepath, trans = self.transcript.iloc[index].values
-        wave, sr = torchaudio.load(filepath)
+        filepath = self.wav[index]
+        trans = self.transcript[self.transcript.name == filepath.parts[-1]]['trans'].values[0]
+        wave, sr = torchaudio.load(os.path.normpath(filepath))
         specs = self.feature_transform(wave)  # channel, feature, time
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
+   
+       
 
 
 class ComposeDataset(Dataset):
     """
-        this dataset aim to load:
-            - self record
-            - FPTOpenDataset
-            - vivos
-            - vin big data
-            - vietnamese podcasts
+    this dataset aim to load:
+        - self record
+        - FPTOpenDataset
+        - vivos
+        - vin big data
+        - vietnamese podcasts
     """
 
     def __init__(
@@ -240,7 +242,7 @@ class ComposeDataset(Dataset):
         if vlsp_root != "":
             self.walker += self.init_vlsp(vlsp_root)
         if podcasts_root != "":
-            self.walker += self.init_VNPodcast
+            self.walker += self.init_VNPodcast(podcasts_root)
         if fpt_root != "":
             self.walker += self.init_FPT(fpt_root)
         if self_record_root != "":
@@ -288,33 +290,27 @@ class ComposeDataset(Dataset):
         return walker
 
     def init_FPT(self, root):
-        return FPTOpenData(root)
-
-    def init_VNPostcast(self, root):
-        return VNpodcastDataset(root)
-
+        init = FPTOpenData(root)
+        return [init[idx] for idx in range(len(init))] 
+    def init_VNPodcast(self, root):
+        init = VNpodcastDataset(root)
+        return [init[idx] for idx in range(len(init))]
     def init_nlp_record(self, root):
-        return FPTOpenData(root)
-
+        init = FPTOpenData(root)
+        return [init[idx] for idx in range(len(init))]
     def init_youtobe(self, root):
-        return YoutobeDataset(root)
-
+        init = YoutobeDataset(root)
+        return [init[idx] for idx in range(len(init))]
     def __len__(self):
         return len(self.walker)
 
     def __getitem__(self, idx):
         filepath, trans = self.walker[idx]
-
         wave, sr = torchaudio.load(filepath)
-
         specs = self.feature_transform(wave)  # channel, feature, time
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()  # time, feature
-
         return specs, trans
+    
 
 
-if __name__ == "__main__":
-    path = r"D:\2022\Python\ARS\data\youtube2text"
-    yt = ComposeDataset(youtobe_root=path)
-    print(len(yt))
