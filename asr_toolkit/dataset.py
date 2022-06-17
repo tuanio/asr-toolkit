@@ -2,13 +2,15 @@ from ctypes import util
 from mimetypes import init
 import os
 from numpy import record
-from sklearn import utils
+
+
 import torch
 from torch.utils.data import Dataset
 import torchaudio
 import pandas as pd
 from pathlib import Path
-from utils import mp3ToWav
+
+
 
 
 class VivosDataset(Dataset):
@@ -82,24 +84,22 @@ class FPTOpenData(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path
-           
+        self.walker = self.transcript.iloc[:].values
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
         return len(self.wav)
 
     def __getitem__(self, index: int):
-        filepath, trans = self.transcript.iloc[index].values
         try:
-            wave, sr = torchaudio.load(os.path.normpath(filepath))
-            self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=200)
+            filepath, trans = self.walker[index]
+            wave, sr = torchaudio.load(filepath)
             specs = self.feature_transform(wave)  # channel, feature, time
             specs = specs.permute(0, 2, 1)  # channel, time, feature
             specs = specs.squeeze()
             return specs, trans
-       
         except:
-            print("didn't find filepath " + str(filepath))
+            print("didn't find filepath in index: " + str(index))
 
 
 class VNpodcastDataset(Dataset):
@@ -178,6 +178,7 @@ class YoutobeDataset(Dataset):
     def __init__(self, root: str = "", n_fft: int = 200):
         super().__init__()
         self.root = root
+        self.walker= []
         script = list(Path(root).glob("*/*.csv"))
         assert script != [], "can't find the csv file script"
         transcript = pd.read_csv(script[0], encoding="utf-8")
@@ -192,21 +193,24 @@ class YoutobeDataset(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path .wav
-            
+        for idx,filepath in enumerate(self.wav):
+            self.walker.append((filepath,self.transcript[self.transcript.name == filepath.parts[-1]]['trans'].values[0]))
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
         return len(self.wav)
 
     def __getitem__(self, index: int):
-        filepath = self.wav[index]
-        trans = self.transcript[self.transcript.name == filepath.parts[-1]]['trans'].values[0]
-        wave, sr = torchaudio.load(os.path.normpath(filepath))
-        specs = self.feature_transform(wave)  # channel, feature, time
-        specs = specs.permute(0, 2, 1)  # channel, time, feature
-        specs = specs.squeeze()
-        return specs, trans
-   
+        try:
+            filepath, trans = self.walker[index]
+            wave, sr = torchaudio.load(filepath)
+            specs = self.feature_transform(wave)  # channel, feature, time
+            specs = specs.permute(0, 2, 1)  # channel, time, feature
+            specs = specs.squeeze()
+            return specs, trans
+        except:
+            print("didn't find filepath in index: " + str(index))
+
        
 
 
@@ -236,17 +240,17 @@ class ComposeDataset(Dataset):
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
         self.walker = []
         if vivos_root != "":
-            self.walker = self.init_vivos(vivos_root, vivos_subset)
+            self.walker.extend(self.init_vivos(vivos_root, vivos_subset))
         if vlsp_root != "":
-            self.walker += self.init_vlsp(vlsp_root)
+            self.walker.extend(self.init_vlsp(vlsp_root))
         if podcasts_root != "":
-            self.walker += self.init_VNPodcast(podcasts_root)
+            self.walker.extend(self.init_VNPodcast(podcasts_root))
         if fpt_root != "":
-            self.walker += self.init_FPT(fpt_root)
+            self.walker.extend(self.init_FPT(fpt_root))
         if self_record_root != "":
-            self.walker += self.init_nlp_record(self_record_root)
+            self.walker.extend(self.init_nlp_record(self_record_root))
         if youtobe_root != "":
-            self.walker += self.init_youtobe(youtobe_root)
+            self.walker.extend(self.init_youtobe(youtobe_root))
 
     def init_vivos(self, root, subset):
         assert subset in ["train", "test"], "subset not found"
@@ -289,16 +293,16 @@ class ComposeDataset(Dataset):
 
     def init_FPT(self, root):
         init = FPTOpenData(root)
-        return [init[idx] for idx in range(len(init))] 
+        return init.walker
     def init_VNPodcast(self, root):
         init = VNpodcastDataset(root)
-        return [init[idx] for idx in range(len(init))]
+        return init.walker
     def init_nlp_record(self, root):
         init = FPTOpenData(root)
-        return [init[idx] for idx in range(len(init))]
+        return init.walker
     def init_youtobe(self, root):
         init = YoutobeDataset(root)
-        return [init[idx] for idx in range(len(init))]
+        return init.walker
     def __len__(self):
         return len(self.walker)
 
@@ -310,5 +314,17 @@ class ComposeDataset(Dataset):
         specs = specs.squeeze()  # time, feature
         return specs, trans
     
+if __name__ == "__main__":
+    print("run")
+    FPTPath =r'D:\2022\Python\ARS\data\FPTOpenData'
+    YoutobePath= r"D:\2022\Python\ARS\data\youtube2text"
+    PodcastPath  = r"D:\2022\Python\ARS\data\vietnamese_podcast"
+    NLPRecordPath = r"D:\2022\Python\ARS\data\nlp_speech_record"
+    VivosPath = r"D:\2022\Python\ARS\data\vivos"
+    VlspPath = r"D:\2022\Python\ARS\data\vlsp2020_train_set_02"
+    Compose = ComposeDataset(vivos_root=VivosPath,vlsp_root=VlspPath,podcasts_root=PodcastPath,fpt_root=FPTPath,self_record_root=NLPRecordPath,youtobe_root=YoutobePath)
+    print(len(Compose))
+    print(Compose.walker[:10])
+  
 
 
