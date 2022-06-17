@@ -76,7 +76,8 @@ model:
       lstm:
         hidden_size: 128
         num_layers: 1
-        use_attention: False,
+        use_attention: True,
+        num_attention_heads: 1,
         bias: True,
         batch_first: True,
         dropout: 0.1,
