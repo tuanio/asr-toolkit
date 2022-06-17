@@ -10,7 +10,6 @@ import pandas as pd
 from pathlib import Path
 
 
-
 class VivosDataset(Dataset):
     def __init__(self, root: str = "", subset: str = "train", n_fft: int = 200):
         super().__init__()
@@ -176,7 +175,7 @@ class YoutobeDataset(Dataset):
     def __init__(self, root: str = "", n_fft: int = 200):
         super().__init__()
         self.root = root
-        self.walker= []
+        self.walker = []
         script = list(Path(root).glob("*/*.csv"))
         assert script != [], "can't find the csv file script"
         transcript = pd.read_csv(script[0], encoding="utf-8")
@@ -191,8 +190,15 @@ class YoutobeDataset(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path .wav
-        for idx,filepath in enumerate(self.wav):
-            self.walker.append((filepath,self.transcript[self.transcript.name == filepath.parts[-1]]['trans'].values[0]))
+        for idx, filepath in enumerate(self.wav):
+            self.walker.append(
+                (
+                    filepath,
+                    self.transcript[self.transcript.name == filepath.parts[-1]][
+                        "trans"
+                    ].values[0],
+                )
+            )
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
@@ -208,8 +214,6 @@ class YoutobeDataset(Dataset):
             return specs, trans
         except:
             print("didn't find filepath in index: " + str(index))
-
-       
 
 
 class ComposeDataset(Dataset):
@@ -292,15 +296,19 @@ class ComposeDataset(Dataset):
     def init_FPT(self, root):
         init = FPTOpenData(root)
         return init.walker
+
     def init_VNPodcast(self, root):
         init = VNpodcastDataset(root)
         return init.walker
+
     def init_nlp_record(self, root):
         init = FPTOpenData(root)
         return init.walker
+
     def init_youtobe(self, root):
         init = YoutobeDataset(root)
         return init.walker
+
     def __len__(self):
         return len(self.walker)
 
@@ -311,18 +319,23 @@ class ComposeDataset(Dataset):
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()  # time, feature
         return specs, trans
-    
+
+
 if __name__ == "__main__":
     print("run")
-    FPTPath =r'D:\2022\Python\ARS\data\FPTOpenData'
-    YoutobePath= r"D:\2022\Python\ARS\data\youtube2text"
-    PodcastPath  = r"D:\2022\Python\ARS\data\vietnamese_podcast"
+    FPTPath = r"D:\2022\Python\ARS\data\FPTOpenData"
+    YoutobePath = r"D:\2022\Python\ARS\data\youtube2text"
+    PodcastPath = r"D:\2022\Python\ARS\data\vietnamese_podcast"
     NLPRecordPath = r"D:\2022\Python\ARS\data\nlp_speech_record"
     VivosPath = r"D:\2022\Python\ARS\data\vivos"
     VlspPath = r"D:\2022\Python\ARS\data\vlsp2020_train_set_02"
-    Compose = ComposeDataset(vivos_root=VivosPath,vlsp_root=VlspPath,podcasts_root=PodcastPath,fpt_root=FPTPath,self_record_root=NLPRecordPath,youtobe_root=YoutobePath)
+    Compose = ComposeDataset(
+        vivos_root=VivosPath,
+        vlsp_root=VlspPath,
+        podcasts_root=PodcastPath,
+        fpt_root=FPTPath,
+        self_record_root=NLPRecordPath,
+        youtobe_root=YoutobePath,
+    )
     print(len(Compose))
     print(Compose.walker[:10])
-  
-
-
