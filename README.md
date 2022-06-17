@@ -18,3 +18,6 @@ Với mỗi lớp `encoder` và `decoder` thì đều phải có tham số `outp
 
 ## Variable
 set HYDRA_FULL_ERROR=1
+
+## Run
+- `python main.py -cp conf -cn configs`

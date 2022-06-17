@@ -39,7 +39,7 @@ model:
       - transformer
       - conformer
     structure:
-      - conformer
+      - transformer
     hyper:
       general:
         input_dim: 80 # n_fft // 2 + 1
@@ -50,6 +50,23 @@ model:
       vgg:
         init_dim: 64
         hide_dim: 128
+      lstm:
+        hidden_size: 128
+        num_layers: 3
+        bias: True
+        batch_first: True 
+        dropout: 0.1
+        bidirectional: True
+      transformer:
+        d_model: 64
+        nhead: 2
+        num_layers: 4
+        dim_feedforward: 128
+        dropout: 0.1
+        activation: relu # or gelu
+        layer_norm_eps: 1e-05
+        batch_first: True
+        norm_first: False
   decoder:
     all_types:
       - lstm
@@ -57,6 +74,13 @@ model:
     selected: not_choose
     hyper:
       lstm:
+        hidden_size: 128
+        num_layers: 1
+        use_attention: False,
+        bias: True,
+        batch_first: True,
+        dropout: 0.1,
+        bidirectional: False,
       transformer:
   framework:
     all_types:

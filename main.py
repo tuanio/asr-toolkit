@@ -1,9 +1,9 @@
 import torch
 from torch import nn, Tensor
-from asr_toolkit.data.dataset import VivosDataset
+from asr_toolkit.data.dataset import VivosDataset, ComposeDataset
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased
-from asr_toolkit.encoder import Conformer, VGGExtractor
+from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
 import pytorch_lightning as pl
 import hydra
@@ -26,9 +26,11 @@ class Encoder(nn.Module):
             elif structure == "vgg":
                 encoder = VGGExtractor(**cfg_encoder.hyper.vgg, input_dim=input_dim)
             elif structure == "lstm":
-                encoder = ...
+                encoder = LSTMEncoder(**cfg_encoder.hyper.lstm, input_dim=input_dim)
             elif structure == "transformer":
-                encoder = ...
+                encoder = TransformerEncoder(
+                    **cfg_encoder.hyper.transformer, input_dim=input_dim
+                )
 
             input_dim = encoder.output_dim
 
@@ -50,94 +52,87 @@ class Encoder(nn.Module):
         return inputs, input_lengths
 
 
-if __name__ == "__main__":
+parser = argparse.ArgumentParser(description="Config path")
+parser.add_argument("-cp", help="config path")  # config path
+parser.add_argument("-cn", help="config name")  # config name
 
-    parser = argparse.ArgumentParser(description="Config path")
-    parser.add_argument("-cp", help="config path")  # config path
-    parser.add_argument("-cn", help="config name")  # config name
+args = parser.parse_args()
 
-    args = parser.parse_args()
 
-    @hydra.main(config_path=args.cp, config_name=args.cn)
-    def main(cfg: DictConfig):
+@hydra.main(config_path=args.cp, config_name=args.cn)
+def main(cfg: DictConfig):
 
-        # create dataset
-        assert cfg.text.selected in cfg.text.all_types, "Dataset not found!"
-        if cfg.dataset.selected == "vivos":
-            train_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="train")
-            test_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="test")
-            val_set = test_set
-            predict_set = test_set
+    # create dataset
+    assert cfg.text.selected in cfg.text.all_types, "Dataset not found!"
+    if cfg.dataset.selected == "vivos":
+        train_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="train")
+        test_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="test")
+        val_set = test_set
+        predict_set = test_set
 
-        # create text process
-        assert cfg.text.selected in cfg.text.all_types, "Text Process based not found!"
-        if cfg.text.selected == "char":
-            text_process = CharacterBased(**cfg.text.hyper.char)
-        elif cfg.text.selected == "bpe":
-            text_process = BPEBased(**cfg.text.hyper.bpe)
-        n_class = text_process.n_class
+    # create text process
+    assert cfg.text.selected in cfg.text.all_types, "Text Process based not found!"
+    if cfg.text.selected == "char":
+        text_process = CharacterBased(**cfg.text.hyper.char)
+    elif cfg.text.selected == "bpe":
+        text_process = BPEBased(**cfg.text.hyper.bpe)
+    n_class = text_process.n_class
 
-        # create data module
-        dm = DataModule(
-            train_set,
-            val_set,
-            test_set,
-            predict_set,
-            text_process,
-            cfg.general.batch_size,
+    # create data module
+    dm = DataModule(
+        train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size,
+    )
+
+    cfg_model = cfg.model
+
+    # create encoder and decoder
+    encoder = Encoder(cfg_model.encoder)
+    decoder = None
+    if cfg_model.decoder.selected == "lstm":
+        decoder = ...
+    elif cfg_model.decoder.selected == "transformer":
+        decoder = ...
+
+    # create framework
+    framework_cfg_dict = dict(
+        encoder=encoder,
+        decoder=decoder,
+        n_class=n_class,
+        cfg_model=cfg_model,
+        text_process=text_process,
+    )
+    if not decoder:  # is None
+        del framework_cfg_dict["decoder"]
+
+    assert (
+        cfg_model.framework.selected in cfg_model.framework.all_types
+    ), "Framework not found!"
+    if cfg_model.framework.selected == "ctc":
+        framework = CTCModel(**framework_cfg_dict, **cfg_model.framework.hyper.ctc)
+    elif cfg_model.framework.selected == "aed":
+        framework = AEDModel(**framework_cfg_dict, **cfg_model.framework.hyper.aed)
+    elif cfg_model.framework.selected == "rnnt":
+        framework = RNNTModel(**framework_cfg_dict, **cfg_model.framework.hyper.rnnt)
+    elif cfg_model.framework.selected == "joint_ctc_attention":
+        framework = JointCTCAttentionModel(
+            **framework_cfg_dict, **cfg_model.framework.hyper.joint_ctc_attention
         )
 
-        cfg_model = cfg.model
+    # logger
+    tb_logger = pl.loggers.tensorboard.TensorBoardLogger(**cfg.trainer.tb_logger)
+    lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
 
-        # create encoder and decoder
-        encoder = Encoder(cfg_model.encoder)
-        decoder = None
-        if cfg_model.decoder.selected == "lstm":
-            decoder = ...
-        elif cfg_model.decoder.selected == "transformer":
-            decoder = ...
+    trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
+    # trainer.fit(model=framework, datamodule=dm)
 
-        # create framework
-        framework_cfg_dict = dict(
-            encoder=encoder,
-            decoder=decoder,
-            n_class=n_class,
-            cfg_model=cfg_model,
-            text_process=text_process,
-        )
-        if not decoder:  # is None
-            del framework_cfg_dict["decoder"]
-
-        assert (
-            cfg_model.framework.selected in cfg_model.framework.all_types
-        ), "Framework not found!"
-        if cfg_model.framework.selected == "ctc":
-            framework = CTCModel(**framework_cfg_dict, **cfg_model.framework.hyper.ctc)
-        elif cfg_model.framework.selected == "aed":
-            framework = AEDModel(**framework_cfg_dict, **cfg_model.framework.hyper.aed)
-        elif cfg_model.framework.selected == "rnnt":
-            framework = RNNTModel(
-                **framework_cfg_dict, **cfg_model.framework.hyper.rnnt
-            )
-        elif cfg_model.framework.selected == "joint_ctc_attention":
-            framework = JointCTCAttentionModel(
-                **framework_cfg_dict, **cfg_model.framework.hyper.joint_ctc_attention
-            )
-
-        # logger
-        tb_logger = pl.loggers.tensorboard.TensorBoardLogger(**cfg.trainer.tb_logger)
-        lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
-
-        trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
-        trainer.fit(model=framework, datamodule=dm)
-
-   
 
 if __name__ == "__main__":
     print("run")
     main()
-    fn =  ComposeDataset(fpt_root=r'D:\2022\Python\ARS\data\FPTOpenData',podcasts_root=r'D:\2022\Python\ARS\data\vietnamese_podcast',self_record_root=r'D:\2022\Python\ARS\data\nlp_speech_record'
-    )
-    
-    print(len(fn))
-  
+    # fn = ComposeDataset(
+    #     fpt_root=r"D:\2022\Python\ARS\data\FPTOpenData",
+    #     podcasts_root=r"D:\2022\Python\ARS\data\vietnamese_podcast",
+    #     self_record_root=r"D:\2022\Python\ARS\data\nlp_speech_record",
+    # )
+
+    # print(len(fn))

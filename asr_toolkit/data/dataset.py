@@ -12,7 +12,6 @@ from pathlib import Path
 from asr_toolkit.utils import mp3ToWav
 
 
-
 class VivosDataset(Dataset):
     def __init__(self, root: str = "", subset: str = "train", n_fft: int = 200):
         super().__init__()
@@ -84,7 +83,7 @@ class FPTOpenData(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path
-           
+
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
@@ -99,7 +98,7 @@ class FPTOpenData(Dataset):
             specs = specs.permute(0, 2, 1)  # channel, time, feature
             specs = specs.squeeze()
             return specs, trans
-       
+
         except:
             print("didn't find filepath " + str(filepath))
 
@@ -194,7 +193,7 @@ class YoutobeDataset(Dataset):
             self.transcript.name = [
                 mp3ToWav(mp3_path) for mp3_path in mp3
             ]  # conver and add new path .wav
-            
+
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
     def __len__(self):
@@ -202,14 +201,14 @@ class YoutobeDataset(Dataset):
 
     def __getitem__(self, index: int):
         filepath = self.wav[index]
-        trans = self.transcript[self.transcript.name == filepath.parts[-1]]['trans'].values[0]
+        trans = self.transcript[self.transcript.name == filepath.parts[-1]][
+            "trans"
+        ].values[0]
         wave, sr = torchaudio.load(os.path.normpath(filepath))
         specs = self.feature_transform(wave)  # channel, feature, time
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()
         return specs, trans
-   
-       
 
 
 class ComposeDataset(Dataset):
@@ -291,16 +290,20 @@ class ComposeDataset(Dataset):
 
     def init_FPT(self, root):
         init = FPTOpenData(root)
-        return [init[idx] for idx in range(len(init))] 
+        return [init[idx] for idx in range(len(init))]
+
     def init_VNPodcast(self, root):
         init = VNpodcastDataset(root)
         return [init[idx] for idx in range(len(init))]
+
     def init_nlp_record(self, root):
         init = FPTOpenData(root)
         return [init[idx] for idx in range(len(init))]
+
     def init_youtobe(self, root):
         init = YoutobeDataset(root)
         return [init[idx] for idx in range(len(init))]
+
     def __len__(self):
         return len(self.walker)
 
@@ -311,6 +314,3 @@ class ComposeDataset(Dataset):
         specs = specs.permute(0, 2, 1)  # channel, time, feature
         specs = specs.squeeze()  # time, feature
         return specs, trans
-    
-
-

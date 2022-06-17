@@ -334,3 +334,69 @@ class VGGExtractor(nn.Module):
             feature.shape[0], feature.shape[1], self.output_dim
         )
         return feature, feat_len
+
+
+class LSTMEncoder(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_size: int,
+        num_layers: int,
+        bias: bool = True,
+        batch_first: bool = True,
+        dropout: float = 0.1,
+        bidirectional: bool = True,
+    ):
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_dim,
+            hidden_size,
+            num_layers,
+            bias,
+            batch_first,
+            dropout,
+            bidirectional,
+        )
+        self.output_dim = hidden_size + hidden_size * bidirectional
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+        outputs, (h, c) = self.lstm(inputs)
+        return outputs, input_lengths
+
+
+class TransformerEncoder(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        d_model: int,
+        nhead: int,
+        num_layers: int,
+        dim_feedforward: int = 2048,
+        dropout: float = 0.1,
+        activation: str = "relu",
+        layer_norm_eps: float = 1e-05,
+        batch_first: bool = True,
+        norm_first: bool = False,
+    ):
+        super().__init__()
+        self.input_proj = nn.Linear(input_dim, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model,
+            nhead,
+            dim_feedforward,
+            dropout,
+            activation,
+            layer_norm_eps,
+            batch_first,
+            norm_first,
+        )
+        encoder_norm = nn.LayerNorm(d_model, layer_norm_eps)
+        self.transformer_encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers, encoder_norm
+        )
+        self.output_dim = d_model
+
+    def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
+        outputs = self.input_proj(inputs)
+        outputs = self.transformer_encoder(outputs)
+        return outputs, input_lengths
