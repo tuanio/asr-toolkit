@@ -1,14 +1,15 @@
 import torch
 from torch import nn, Tensor
-from asr_toolkit.data.dataset import VivosDataset
+from asr_toolkit.data.dataset import VivosDataset ,ComposeDataset
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased
 from asr_toolkit.encoder import Conformer, VGGExtractor
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
 import pytorch_lightning as pl
-import hydra
+# import hydra
 from omegaconf import OmegaConf, DictConfig
 import argparse
+
 
 from typing import Tuple
 
@@ -133,11 +134,4 @@ if __name__ == "__main__":
 
    
 
-if __name__ == "__main__":
-    print("run")
-    main()
-    fn =  ComposeDataset(fpt_root=r'D:\2022\Python\ARS\data\FPTOpenData',podcasts_root=r'D:\2022\Python\ARS\data\vietnamese_podcast',self_record_root=r'D:\2022\Python\ARS\data\nlp_speech_record'
-    )
-    
-    print(len(fn))
-  
+main()
