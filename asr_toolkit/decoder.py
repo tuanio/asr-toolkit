@@ -97,9 +97,7 @@ class TransformerDecoder(nn.Module):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers, decoder_norm)
         self.output_dim = d_model
 
-    def forward(
-        self, targets: Tensor, target_lengths: Tensor, encoder_outputs: Tensor
-    ) -> Tensor:
+    def forward(self, targets: Tensor, encoder_outputs: Tensor) -> Tensor:
         embedded = self.embedding(targets)
         outputs = self.decoder(tgt=embedded, memory=encoder_outputs)
         return outputs

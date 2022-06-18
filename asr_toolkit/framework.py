@@ -512,7 +512,7 @@ class JointCTCAttentionModel(BaseModel):
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
         targets_edited = targets.to(dtype=torch.long).view(-1)
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
-        
+
         loss = self.criterion(ctc_loss, ce_loss)
 
         self.log("train loss", loss)
@@ -532,7 +532,7 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
-        
+
         bz, t, _ = decoder_outputs.size()
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
         targets_edited = targets.to(dtype=torch.long).view(-1)
@@ -568,7 +568,7 @@ class JointCTCAttentionModel(BaseModel):
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
         targets_edited = targets.to(dtype=torch.long).view(-1)
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
-        
+
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
