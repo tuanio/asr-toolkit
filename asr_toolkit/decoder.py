@@ -53,13 +53,14 @@ class LSTMDecoder(nn.Module):
                 targets: batch of sequence label integer
                 encoder_outputs (optional): output of encoder
                     -> (batch size, seq len, output_dim)
+                hidden_state (optional): hidden state of the last decoder
         """
         embedded = self.embedding(targets)
         outputs, hidden_state = self.lstm(embedded, hidden_state)
         outputs = self.output_proj(outputs)
 
         # output: (batch size, seq len, self.output_dim)
-        if self.use_attention and bool(encoder_outputs):
+        if self.use_attention and encoder_outputs is not None:
             outputs, attn_output_weights = self.attention(
                 outputs, encoder_outputs, encoder_outputs
             )
