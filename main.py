@@ -93,7 +93,7 @@ def main(cfg: DictConfig):
 
     # create encoder and decoder
     encoder = Encoder(cfg_model.encoder)
-    decoder = None
+    assert cfg_model.decoder.selected in cfg_model.decoder.all_types, "Decoder not found!"
     if cfg_model.decoder.selected == "lstm":
         decoder = LSTMDecoder(
             **cfg_model.decoder.hyper.lstm,
@@ -106,6 +106,8 @@ def main(cfg: DictConfig):
         decoder = TransformerDecoder(
             **cfg_model.decoder.hyper.transformer, n_class=n_class
         )
+    else:
+        decoder = None
     print("Done setup encoder and decoder!")
 
     # create framework

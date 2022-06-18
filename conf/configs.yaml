@@ -71,7 +71,8 @@ model:
     all_types:
       - lstm
       - transformer
-    selected: lstm
+      - none
+    selected: none
     hyper:
       lstm:
         hidden_size: 128
