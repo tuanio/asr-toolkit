@@ -34,7 +34,6 @@ model:
   encoder:
     all_types:
       - vgg
-      - cnn
       - lstm
       - transformer
       - conformer
