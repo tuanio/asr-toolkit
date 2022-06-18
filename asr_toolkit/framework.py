@@ -366,7 +366,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         self.log("train loss", loss)
 
@@ -386,7 +388,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         label_sequences, predict_sequences, wer = self.get_wer(
             targets, inputs, input_lengths
@@ -414,7 +418,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        loss = self.criterion(
+            outputs, compute_targets, output_lengths, compute_target_lengths
+        )
 
         label_sequences, predict_sequences, wer = self.get_wer(
             targets, inputs, input_lengths
