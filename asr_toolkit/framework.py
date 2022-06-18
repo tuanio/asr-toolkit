@@ -164,7 +164,9 @@ class AEDModel(BaseModel):
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
         bz, t, _ = outputs.size()
-        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
+        outputs_edited = outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        loss = self.criterion(outputs_edited, targets_edited)
 
         self.log("train loss", loss)
 
@@ -175,7 +177,9 @@ class AEDModel(BaseModel):
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
         bz, t, _ = outputs.size()
-        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
+        outputs_edited = outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        loss = self.criterion(outputs_edited, targets_edited)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
 
@@ -192,7 +196,9 @@ class AEDModel(BaseModel):
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
         bz, t, _ = outputs.size()
-        loss = self.criterion(outputs.view(bz * t, -1), targets.view(-1))
+        outputs_edited = outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        loss = self.criterion(outputs_edited, targets_edited)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
 
@@ -277,7 +283,7 @@ class RNNTModel(BaseModel):
 
         zeros = torch.zeros((batch_size, 1)).to(device=self.device)
         compute_targets = torch.cat((zeros, targets), dim=1).to(
-            device=self.device, dtype=torch.int
+            device=self.device, dtype=torch.long
         )
         compute_target_lengths = (target_lengths + 1).to(device=self.device)
 
@@ -501,8 +507,12 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
+
         bz, t, _ = decoder_outputs.size()
-        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
+        decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
+        
         loss = self.criterion(ctc_loss, ce_loss)
 
         self.log("train loss", loss)
@@ -522,8 +532,12 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
+        
         bz, t, _ = decoder_outputs.size()
-        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
+        decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
+
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
@@ -549,8 +563,12 @@ class JointCTCAttentionModel(BaseModel):
             encoder_output_lengths,
             target_lengths,
         )
+
         bz, t, _ = decoder_outputs.size()
-        ce_loss = self.ce_criterion(decoder_outputs.view(bz * t, -1), targets.view(-1))
+        decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
+        targets_edited = targets.to(dtype=torch.long).view(-1)
+        ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
+        
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)

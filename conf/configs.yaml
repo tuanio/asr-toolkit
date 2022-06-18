@@ -39,6 +39,7 @@ model:
       - transformer
       - conformer
     structure:
+      - vgg
       - lstm
     hyper:
       general:
@@ -98,7 +99,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: rnnt
+    selected: joint_ctc_attention
     hyper:
       ctc:
         log_idx: ${general.log_idx}
