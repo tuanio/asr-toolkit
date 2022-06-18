@@ -59,7 +59,7 @@ class LSTMDecoder(nn.Module):
         outputs = self.output_proj(outputs)
 
         # output: (batch size, seq len, self.output_dim)
-        if self.use_attention and encoder_outputs:
+        if self.use_attention and bool(encoder_outputs):
             outputs, attn_output_weights = self.attention(
                 outputs, encoder_outputs, encoder_outputs
             )
