@@ -44,8 +44,8 @@ model:
         input_dim: 80 # n_fft // 2 + 1
       conformer:
         encoder_dim: 144
-        num_encoder_layers: 1 # 16
-        num_attention_heads: 1 # 4
+        num_encoder_layers: 16
+        num_attention_heads: 4
         freq_masks: 2
         time_masks: 10
         freq_width: 27
@@ -78,7 +78,7 @@ model:
     selected: lstm
     hyper:
       lstm:
-        hidden_size: 256
+        hidden_size: 320
         num_layers: 1
         use_attention: False
         num_attention_heads: 1
