@@ -80,6 +80,8 @@ class CTCModel(BaseModel):
 
         self.log("train loss", loss)
 
+        return loss
+
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self(inputs, input_lengths)
@@ -96,6 +98,8 @@ class CTCModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
+        return loss, wer
+
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self(inputs, input_lengths)
@@ -111,6 +115,8 @@ class CTCModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+        return loss, wer
 
 
 class AEDModel(BaseModel):
@@ -159,6 +165,8 @@ class AEDModel(BaseModel):
 
         self.log("train loss", loss)
 
+        return loss
+
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
@@ -174,6 +182,8 @@ class AEDModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
+        return loss, wer
+
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
@@ -188,6 +198,8 @@ class AEDModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+        return loss, wer
 
 
 class RNNTModel(BaseModel):
@@ -350,6 +362,8 @@ class RNNTModel(BaseModel):
 
         self.log("train loss", loss)
 
+        return loss
+
     def validation_step(self, batch: Tensor, batch_idx: int):
         (
             inputs,
@@ -375,6 +389,8 @@ class RNNTModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+        return loss, wer
 
     def test_step(self, batch: Tensor, batch_idx: int):
         (
@@ -403,6 +419,8 @@ class RNNTModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+        return loss, wer
 
     def get_wer(
         self, targets: Tensor, inputs: Tensor, input_lengths: Tensor
@@ -482,6 +500,8 @@ class JointCTCAttentionModel(BaseModel):
 
         self.log("train loss", loss)
 
+        return loss
+
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
@@ -507,6 +527,8 @@ class JointCTCAttentionModel(BaseModel):
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
 
+        return loss, wer
+
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
@@ -531,3 +553,5 @@ class JointCTCAttentionModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+
+        return loss, wer

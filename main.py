@@ -134,7 +134,6 @@ def main(cfg: DictConfig):
         )
     print("Done setup framework!")
 
-
     # logger
     tb_logger = pl.loggers.tensorboard.TensorBoardLogger(**cfg.trainer.tb_logger)
     lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
