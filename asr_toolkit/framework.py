@@ -283,7 +283,7 @@ class RNNTModel(BaseModel):
 
         zeros = torch.zeros((batch_size, 1)).to(device=self.device)
         compute_targets = torch.cat((zeros, targets), dim=1).to(
-            device=self.device, dtype=torch.long
+            device=self.device, dtype=torch.int
         )
         compute_target_lengths = (target_lengths + 1).to(device=self.device)
 
@@ -309,7 +309,7 @@ class RNNTModel(BaseModel):
         """
         pred_tokens, hidden_state = list(), None
         decoder_input = encoder_output.new_tensor(
-            [[self.decoder.sos_id]], dtype=torch.long
+            [[self.decoder.sos_id]], dtype=torch.int
         )
 
         for t in range(max_length):
@@ -366,9 +366,7 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
         self.log("train loss", loss)
 
@@ -416,9 +414,7 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
         label_sequences, predict_sequences, wer = self.get_wer(
             targets, inputs, input_lengths
