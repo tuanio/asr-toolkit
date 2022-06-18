@@ -62,7 +62,7 @@ parser.add_argument("-cn", help="config name")  # config name
 args = parser.parse_args()
 
 
-@hydra.main(config_path=args.cp, config_name=args.cn)
+@hydra.main(version_base="1.2", config_path=args.cp, config_name=args.cn)
 def main(cfg: DictConfig):
 
     # create dataset
