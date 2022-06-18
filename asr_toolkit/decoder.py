@@ -100,4 +100,4 @@ class TransformerDecoder(nn.Module):
     def forward(self, targets: Tensor, encoder_outputs: Tensor) -> Tensor:
         embedded = self.embedding(targets)
         outputs = self.decoder(tgt=embedded, memory=encoder_outputs)
-        return outputs
+        return outputs, ...
