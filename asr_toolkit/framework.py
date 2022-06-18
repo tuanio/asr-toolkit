@@ -69,7 +69,7 @@ class CTCModel(BaseModel):
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
         outputs, output_lengths = self.encoder(inputs, input_lengths)
         outputs = self.out(outputs)
-        outputs = F.log_softmax(outputs)
+        outputs = F.log_softmax(outputs, -1)
         return outputs, output_lengths
 
     def training_step(self, batch: Tensor, batch_idx: int):
@@ -156,7 +156,7 @@ class AEDModel(BaseModel):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs, hidden_state = self.decoder(targets, encoder_outputs)
         outputs = self.out(decoder_outputs)
-        outputs = F.log_softmax(outputs)
+        outputs = F.log_softmax(outputs, -1)
         return outputs
 
     def training_step(self, batch: Tensor, batch_idx: int):
@@ -266,7 +266,7 @@ class RNNTModel(BaseModel):
 
         outputs = torch.cat((encoder_outputs, decoder_outputs), dim=-1)
         outputs = self.out(outputs)
-        outputs = F.log_softmax(outputs)
+        outputs = F.log_softmax(outputs, -1)
 
         return outputs
 
@@ -480,8 +480,8 @@ class JointCTCAttentionModel(BaseModel):
         encoder_outputs = self.encoder_outputs(encoder_outputs)
         decoder_outputs = self.decoder_outputs(decoder_outputs)
 
-        encoder_outputs = F.log_softmax(encoder_outputs)
-        decoder_outputs = F.log_softmax(decoder_outputs)
+        encoder_outputs = F.log_softmax(encoder_outputs, -1)
+        decoder_outputs = F.log_softmax(decoder_outputs, -1)
 
         return encoder_outputs, encoder_output_lengths, decoder_outputs
 
