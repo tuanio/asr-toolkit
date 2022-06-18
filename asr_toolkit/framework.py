@@ -240,11 +240,11 @@ class RNNTModel(BaseModel):
         self,
         inputs: Tensor,
         input_lengths: Tensor,
-        compute_targets: Tensor,
-        compute_target_lengths: Tensor,
+        targets: Tensor,
+        target_lengths: Tensor,
     ) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs, hidden_state = self.decoder(compute_targets)
+        decoder_outputs, hidden_state = self.decoder(targets)
 
         outputs = self.joint(encoder_outputs, decoder_outputs)
         return outputs, encoder_output_lengths
@@ -366,9 +366,7 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
         self.log("train loss", loss)
 
@@ -388,9 +386,7 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
         label_sequences, predict_sequences, wer = self.get_wer(
             targets, inputs, input_lengths
@@ -418,9 +414,7 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(
-            outputs, compute_targets, output_lengths, compute_target_lengths
-        )
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
         label_sequences, predict_sequences, wer = self.get_wer(
             targets, inputs, input_lengths

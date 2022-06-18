@@ -9,12 +9,9 @@ from .feed_forward import FeedForwardModule
 from .attention import MultiHeadedSelfAttentionModule
 from .convolution import (
     ConformerConvModule,
-    Conv2dSubampling,
+    ConvSubsampling,
 )
-from .modules import (
-    ResidualConnectionModule,
-    Linear,
-)
+from .modules import ResidualConnectionModule, Linear, SpecAugment
 
 
 class ConformerBlock(nn.Module):
@@ -136,11 +133,10 @@ class ConformerEncoder(nn.Module):
         half_step_residual: bool = True,
     ):
         super(ConformerEncoder, self).__init__()
-        self.conv_subsample = Conv2dSubampling(in_channels=1, out_channels=encoder_dim)
-        self.input_projection = nn.Sequential(
-            Linear(encoder_dim * (((input_dim - 1) // 2 - 1) // 2), encoder_dim),
-            nn.Dropout(p=input_dropout_p),
+        self.conv_subsample = ConvSubsampling(
+            input_dim=input_dim, feat_out=encoder_dim, conv_channels=encoder_dim
         )
+        self.input_dropout = nn.Dropout(p=input_dropout_p)
         self.layers = nn.ModuleList(
             [
                 ConformerBlock(
@@ -182,7 +178,7 @@ class ConformerEncoder(nn.Module):
             * output_lengths (torch.LongTensor): The length of output tensor. ``(batch)``
         """
         outputs, output_lengths = self.conv_subsample(inputs, input_lengths)
-        outputs = self.input_projection(outputs)
+        outputs = self.input_dropout(outputs)
 
         for layer in self.layers:
             outputs = layer(outputs)
@@ -229,8 +225,13 @@ class Conformer(nn.Module):
         conv_dropout_p: float = 0.1,
         conv_kernel_size: int = 31,
         half_step_residual: bool = True,
+        freq_masks: int = 2,
+        time_masks: int = 10,
+        freq_width: int = 27,
+        time_width: int = 0.05,
     ) -> None:
         super(Conformer, self).__init__()
+        self.spec_augment = SpecAugment(freq_masks, time_masks, freq_width, time_width)
         self.encoder = ConformerEncoder(
             input_dim=input_dim,
             encoder_dim=encoder_dim,
