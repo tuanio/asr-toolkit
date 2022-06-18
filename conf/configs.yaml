@@ -58,7 +58,7 @@ model:
         dropout: 0.1
         bidirectional: True
       transformer:
-        d_model: 64
+        d_model:  ${model.encoder.hyper.conformer.encoder_dim}
         nhead: 2
         num_layers: 4
         dim_feedforward: 128
