@@ -72,6 +72,7 @@ def main(cfg: DictConfig):
         test_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="test")
         val_set = test_set
         predict_set = test_set
+    print("Done setup dataset!")
 
     # create text process
     assert cfg.text.selected in cfg.text.all_types, "Text Process based not found!"
@@ -80,11 +81,13 @@ def main(cfg: DictConfig):
     elif cfg.text.selected == "bpe":
         text_process = BPEBased(**cfg.text.hyper.bpe)
     n_class = text_process.n_class
+    print("Done setup text!")
 
     # create data module
     dm = DataModule(
         train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size,
     )
+    print("Done setup datamodule!")
 
     cfg_model = cfg.model
 
@@ -103,6 +106,7 @@ def main(cfg: DictConfig):
         decoder = TransformerDecoder(
             **cfg_model.decoder.hyper.transformer, n_class=n_class
         )
+    print("Done setup encoder and decoder!")
 
     # create framework
     framework_cfg_dict = dict(
@@ -128,12 +132,15 @@ def main(cfg: DictConfig):
         framework = JointCTCAttentionModel(
             **framework_cfg_dict, **cfg_model.framework.hyper.joint_ctc_attention
         )
+    print("Done setup framework!")
+
 
     # logger
     tb_logger = pl.loggers.tensorboard.TensorBoardLogger(**cfg.trainer.tb_logger)
     lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
 
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
+    print("Done setup trainer!")
 
     if cfg.session.train:
         trainer.fit(model=framework, datamodule=dm)
