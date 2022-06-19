@@ -78,8 +78,7 @@ def main(cfg: DictConfig):
         val_set = test_set
         predict_set = test_set
 
-    steps_per_epoch = len(train_set)
-    cfg.model.lr_scheduler.one_cycle_lr.steps_per_epoch = steps_per_epoch
+    
     print("Done setup dataset!")
 
     # create text process
@@ -100,6 +99,9 @@ def main(cfg: DictConfig):
     dm = DataModule(
         train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size,
     )
+
+    steps_per_epoch = len(dm.train_dataloader())
+    cfg.model.lr_scheduler.one_cycle_lr.steps_per_epoch = steps_per_epoch
     print("Done setup datamodule!")
 
     cfg_model = cfg.model
