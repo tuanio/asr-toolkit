@@ -73,8 +73,6 @@ class BPEBased(TextProcess):
         ngram_min=2,
         ngram_max=2,
         required_tokens=None,
-        strict=False,
-        lowercase=True,
     ):
         super().__init__()
         self.encoder = bpe.Encoder(
@@ -84,9 +82,7 @@ class BPEBased(TextProcess):
             silent=silent,
             ngram_min=ngram_min,
             ngram_max=ngram_max,
-            required_tokens=required_tokens,
-            strict=strict,
-            lowercase=lowercase
+            required_tokens=required_tokens
         )
         self.n_class = vocab_size
 
