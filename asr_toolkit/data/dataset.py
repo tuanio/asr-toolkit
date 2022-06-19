@@ -160,7 +160,7 @@ class VNpodcastDataset(Dataset):
             print("didn't find filepath in index: " + str(index))
 
 
-class YoutobeDataset(Dataset):
+class YoutubeDataset(Dataset):
     """
     use for FPT dataset or dataset have structure
     |folder
@@ -234,7 +234,7 @@ class ComposeDataset(Dataset):
         podcasts_root: str = "",
         fpt_root: str = "",
         self_record_root: str = "",
-        youtobe_root: str = "",
+        youtube_root: str = "",
         n_fft: int = 400,
     ):
 
@@ -251,8 +251,8 @@ class ComposeDataset(Dataset):
             self.walker.extend(self.init_FPT(fpt_root))
         if self_record_root != "":
             self.walker.extend(self.init_nlp_record(self_record_root))
-        if youtobe_root != "":
-            self.walker.extend(self.init_youtobe(youtobe_root))
+        if youtube_root != "":
+            self.walker.extend(self.init_youtube(youtube_root))
 
     def init_vivos(self, root, subset):
         assert subset in ["train", "test"], "subset not found"
@@ -305,8 +305,8 @@ class ComposeDataset(Dataset):
         init = FPTOpenData(root)
         return init.walker
 
-    def init_youtobe(self, root):
-        init = YoutobeDataset(root)
+    def init_youtube(self, root):
+        init = YoutubeDataset(root)
         return init.walker
 
     def __len__(self):
@@ -324,7 +324,7 @@ class ComposeDataset(Dataset):
 if __name__ == "__main__":
     print("run")
     FPTPath = r"D:\2022\Python\ARS\data\FPTOpenData"
-    YoutobePath = r"D:\2022\Python\ARS\data\youtube2text"
+    YoutubePath = r"D:\2022\Python\ARS\data\youtube2text"
     PodcastPath = r"D:\2022\Python\ARS\data\vietnamese_podcast"
     NLPRecordPath = r"D:\2022\Python\ARS\data\nlp_speech_record"
     VivosPath = r"D:\2022\Python\ARS\data\vivos"
@@ -335,7 +335,7 @@ if __name__ == "__main__":
         podcasts_root=PodcastPath,
         fpt_root=FPTPath,
         self_record_root=NLPRecordPath,
-        youtobe_root=YoutobePath,
+        youtube_root=YoutubePath,
     )
     print(len(Compose))
     print(Compose.walker[:10])

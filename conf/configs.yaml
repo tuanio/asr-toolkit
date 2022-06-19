@@ -3,7 +3,7 @@ hydra:
     dir: ./outputs
 
 general:
-  batch_size: 2
+  batch_size: 4
   n_fft: 159 # -> output 80 filterbank for spectrogram
   lr: 0.001
   log_idx: 100
@@ -24,11 +24,16 @@ text:
 dataset:
   all_types:
     - vivos
+    - compose
   hyper:
     vivos:
       root: D:\NCKH 2022\vivos
       n_fft: ${general.n_fft}
-  selected: vivos
+    compose:
+      vivos_root: D:\NCKH 2022\vivos
+      vlsp_root: ...
+      n_fft: ${general.n_fft}
+  selected: compose
 
 model:
   encoder:
@@ -62,9 +67,9 @@ model:
         bidirectional: True
       transformer:
         d_model:  ${model.encoder.hyper.conformer.encoder_dim}
-        nhead: 2
-        num_layers: 4
-        dim_feedforward: 128
+        nhead: 8
+        num_layers: 6
+        dim_feedforward: 1024
         dropout: 0.1
         activation: relu # or gelu
         layer_norm_eps: 1e-05
@@ -88,9 +93,9 @@ model:
         bidirectional: False
       transformer:
         d_model: ${model.encoder.hyper.transformer.d_model}
-        nhead: 2
-        num_layers: 4
-        dim_feedforward: 128
+        nhead: 8
+        num_layers: 6
+        dim_feedforward: 1024
         dropout: 0.1
         activation: relu
         layer_norm_eps: 1e-05
