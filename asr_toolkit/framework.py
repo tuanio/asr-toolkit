@@ -15,10 +15,10 @@ class BaseModel(pl.LightningModule):
         super().__init__()
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), **self.cfg_model.optim.adam)
+        optimizer = optim.AdamW(self.parameters(), **self.cfg_model.optim.adamw)
         lr_scheduler = {
-            "scheduler": optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, **self.cfg_model.lr_scheduler.cosine_anealing
+            "scheduler": optim.lr_scheduler.OneCycleLR(
+                optimizer, **self.cfg_model.lr_scheduler.one_cycle_lr
             ),
             "name": "lr_scheduler_logger",
         }

@@ -130,11 +130,17 @@ model:
       blank: 0
       reduction: mean
   optim:
-    adam:
+    adamw:
       lr: ${general.lr}
+      betas: [0.9, 0.98]
+      eps: 1e-08
+      weight_decay: 0.01
   lr_scheduler:
-    cosine_anealing:
-      T_max: 100000
+    one_cycle_lr:
+      max_lr: ${genera.lr}
+      epochs: ${general.epochs}
+      steps_per_epoch: -1
+      verbose: True
 
 trainer:
   tb_logger:

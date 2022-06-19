@@ -14,7 +14,7 @@ class TextProcess(ABC):
         pass
 
     def __init__(self):
-        self.blank_label = 0
+        ...
 
     def decode(self, argmax: torch.Tensor):
         """
@@ -22,7 +22,7 @@ class TextProcess(ABC):
         """
         decode = []
         for i, index in enumerate(argmax):
-            if index != self.blank_label:
+            if index != self.blank_id:
                 if i != 0 and index == argmax[i - 1]:
                     continue
                 decode.append(index.item())
@@ -54,6 +54,7 @@ class CharacterBased(TextProcess):
         self.n_class = len(self.list_vocab)
         self.sos_id = 1
         self.eos_id = 2
+        self.blank_id = 0
 
     def text2int(self, s: str) -> torch.Tensor:
         return torch.Tensor([self.vocab[i] for i in s.lower()])
@@ -91,7 +92,7 @@ class BPEBased(TextProcess):
 
     def fit(self, text_corpus: str = ""):
         self.encoder.fit(text_corpus)
-        self.blank = self.encoder.word_vocab["__blank"]
+        self.blank_id = self.encoder.word_vocab["__blank"]
         self.sos_id = self.encoder.word_vocab["__sow"]
         self.eos_id = self.encoder.word_vocab["__eow"]
 
@@ -111,4 +112,4 @@ class BPEBased(TextProcess):
 
     def load(self, in_path):
         self.encoder = self.encoder.load(in_path)
-        self.blank = self.encoder.word_vocab["__blank"]
+        self.blank_id = self.encoder.word_vocab["__blank"]

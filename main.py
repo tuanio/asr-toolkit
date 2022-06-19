@@ -77,6 +77,9 @@ def main(cfg: DictConfig):
         test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
+
+    steps_per_epoch = len(train_set)
+    cfg.model.lr_scheduler.steps_per_epoch = steps_per_epoch
     print("Done setup dataset!")
 
     # create text process
@@ -86,6 +89,7 @@ def main(cfg: DictConfig):
     elif cfg.text.selected == "bpe":
         text_process = BPEBased(**cfg.text.hyper.bpe)
     n_class = text_process.n_class
+    blank_id = text_process.blank
     print("Done setup text!")
 
     # create data module
