@@ -89,8 +89,8 @@ class BPEBased(TextProcess):
     def fit(self, text_corpus: str = ""):
         self.encoder.fit(text_corpus)
         self.blank_id = self.encoder.word_vocab["__blank"]
-        self.sos_id = self.encoder.word_vocab["__sow"]
-        self.eos_id = self.encoder.word_vocab["__eow"]
+        self.sos_id = self.encoder.bpe_vocab["__sow"]
+        self.eos_id = self.encoder.bpe_vocab["__eow"]
 
     def tokenize(self, text: str):
         return self.encoder.tokenize(text)
