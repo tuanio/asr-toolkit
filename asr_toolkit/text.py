@@ -86,7 +86,7 @@ class BPEBased(TextProcess):
             ngram_max,
             required_tokens,
             strict,
-            lowercase,
+            lowercase
         )
         self.n_class = vocab_size
 

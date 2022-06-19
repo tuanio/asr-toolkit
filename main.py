@@ -88,6 +88,10 @@ def main(cfg: DictConfig):
         text_process = CharacterBased(**cfg.text.hyper.char)
     elif cfg.text.selected == "bpe":
         text_process = BPEBased(**cfg.text.hyper.bpe)
+        print("Getting text corpus from train...")
+        text_corpus = [i[1] for i in train_set]
+        print("Fitting text corpus to BPE...")
+        text_process.fit(text_corpus)
     n_class = text_process.n_class
     blank_id = text_process.blank_id
     print("Done setup text!")

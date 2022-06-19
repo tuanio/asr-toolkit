@@ -19,6 +19,7 @@ text:
     bpe:
       vocab_size: 1000
       pct_bpe: 1
+      required_tokens: ["__blank"]
   selected: char
 
 dataset:
