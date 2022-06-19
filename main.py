@@ -79,7 +79,7 @@ def main(cfg: DictConfig):
         predict_set = test_set
 
     steps_per_epoch = len(train_set)
-    cfg.model.lr_scheduler.steps_per_epoch = steps_per_epoch
+    cfg.model.lr_scheduler.one_cycle_lr.steps_per_epoch = steps_per_epoch
     print("Done setup dataset!")
 
     # create text process
