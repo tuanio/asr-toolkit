@@ -72,9 +72,9 @@ def main(cfg: DictConfig):
         test_set = VivosDataset(**cfg.dataset.hyper.vivos, subset="test")
         val_set = test_set
         predict_set = test_set
-    elif cfg.dataset.selected == 'compose':
-        train_set = ComposeDataset(**cfg.dataset.hyper.compose, subset='train')
-        test_set = ComposeDataset(**cfg.dataset.hyper.compose, subset='test')
+    elif cfg.dataset.selected == "compose":
+        train_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="train")
+        test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
     print("Done setup dataset!")

@@ -6,6 +6,7 @@ from typing import Tuple
 
 import random
 
+
 class SpecAugment(nn.Module):
     """
     Zeroes out(cuts) random continuous horisontal or
