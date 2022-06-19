@@ -93,6 +93,10 @@ def main(cfg: DictConfig):
         text_process.fit(text_corpus)
     n_class = text_process.n_class
     blank_id = text_process.blank_id
+    
+    cfg.model.loss.ctc.blank = blank_id
+    cfg.model.loss.cross_entropy.ignore_index = blank_id
+    cfg.model.loss.rnnt.blank = blank_id
     print("Done setup text!")
 
     # create data module
