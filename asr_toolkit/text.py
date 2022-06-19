@@ -78,15 +78,15 @@ class BPEBased(TextProcess):
     ):
         super().__init__()
         self.encoder = bpe.Encoder(
-            vocab_size,
-            pct_bpe,
-            word_tokenizer,
-            silent,
-            ngram_min,
-            ngram_max,
-            required_tokens,
-            strict,
-            lowercase
+            vocab_size=vocab_size,
+            pct_pbe=pct_bpe,
+            word_tokenizer=word_tokenizer,
+            silent=silent,
+            ngram_min=ngram_min,
+            ngram_max=ngram_max,
+            required_tokens=required_tokens,
+            strict=strict,
+            lowercase=lowercase
         )
         self.n_class = vocab_size
 
