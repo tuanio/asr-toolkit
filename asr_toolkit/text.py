@@ -79,7 +79,7 @@ class BPEBased(TextProcess):
         super().__init__()
         self.encoder = bpe.Encoder(
             vocab_size=vocab_size,
-            pct_pbe=pct_bpe,
+            pct_bpe=pct_bpe,
             word_tokenizer=word_tokenizer,
             silent=silent,
             ngram_min=ngram_min,
