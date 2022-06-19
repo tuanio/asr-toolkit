@@ -137,7 +137,7 @@ model:
       weight_decay: 0.01
   lr_scheduler:
     one_cycle_lr:
-      max_lr: ${genera.lr}
+      max_lr: ${general.lr}
       epochs: ${general.epochs}
       steps_per_epoch: -1
       verbose: True
