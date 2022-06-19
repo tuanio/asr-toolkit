@@ -89,7 +89,7 @@ def main(cfg: DictConfig):
     elif cfg.text.selected == "bpe":
         text_process = BPEBased(**cfg.text.hyper.bpe)
     n_class = text_process.n_class
-    blank_id = text_process.blank
+    blank_id = text_process.blank_id
     print("Done setup text!")
 
     # create data module
