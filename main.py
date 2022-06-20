@@ -90,7 +90,7 @@ def main(cfg: DictConfig):
         
         try:
             print("Openning text corpus")
-            with open("text_corpus.pkl", "wb") as f:
+            with open("text_corpus.pkl", "rb") as f:
                 text_corpus = pickle.load(f)
         except:
             print("Getting text corpus from train...")
