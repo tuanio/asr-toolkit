@@ -30,7 +30,7 @@ class TextProcess(ABC):
 
 
 class CharacterBased(TextProcess):
-    aux_vocab = ["<p>", "<s>", "<e>", " ", ":", "'"]
+    aux_vocab = ["<p>", "<s>", "<e>", " ", ":", "'"] + list(map(str, range(10)))
 
     origin_list_vocab = {
         "en": aux_vocab + list("abcdefghijklmnopqrstuvwxyz"),
