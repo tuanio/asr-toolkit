@@ -11,6 +11,7 @@ import pytorch_lightning as pl
 import hydra
 from omegaconf import OmegaConf, DictConfig
 import argparse
+import pickle
 
 
 from typing import Tuple
@@ -78,7 +79,6 @@ def main(cfg: DictConfig):
         val_set = test_set
         predict_set = test_set
 
-    
     print("Done setup dataset!")
 
     # create text process
@@ -89,11 +89,13 @@ def main(cfg: DictConfig):
         text_process = BPEBased(**cfg.text.hyper.bpe)
         print("Getting text corpus from train...")
         text_corpus = [i[1] for i in train_set]
+        with open("text_corpus.pkl", "wb", encoding="utf-8") as f:
+            pickle.dump(text_corpus, f, protocol=pickle.HIGHEST_PROTOCOL)
         print("Fitting text corpus to BPE...")
         text_process.fit(text_corpus)
     n_class = text_process.n_class
     blank_id = text_process.blank_id
-    
+
     cfg.model.loss.ctc.blank = blank_id
     cfg.model.loss.cross_entropy.ignore_index = blank_id
     cfg.model.loss.rnnt.blank = blank_id

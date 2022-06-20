@@ -88,15 +88,12 @@ class FPTOpenData(Dataset):
         return len(self.wav)
 
     def __getitem__(self, index: int):
-        try:
-            filepath, trans = self.walker[index]
-            wave, sr = torchaudio.load(filepath)
-            specs = self.feature_transform(wave)  # channel, feature, time
-            specs = specs.permute(0, 2, 1)  # channel, time, feature
-            specs = specs.squeeze()
-            return specs, trans
-        except:
-            print("didn't find filepath in index: " + str(index))
+        filepath, trans = self.walker[index]
+        wave, sr = torchaudio.load(filepath)
+        specs = self.feature_transform(wave)  # channel, feature, time
+        specs = specs.permute(0, 2, 1)  # channel, time, feature
+        specs = specs.squeeze()
+        return specs, trans
 
 
 class VNpodcastDataset(Dataset):
@@ -228,31 +225,33 @@ class ComposeDataset(Dataset):
 
     def __init__(
         self,
-        vivos_root: str = "",
+        vivos_root: str,
         vivos_subset: str = "train",
         vlsp_root: str = "",
         podcasts_root: str = "",
         fpt_root: str = "",
         self_record_root: str = "",
         youtube_root: str = "",
-        n_fft: int = 400,
+        n_fft: int = 159,
     ):
-
         super().__init__()
         self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
         self.walker = []
-        if vivos_root != "":
+        if vivos_subset == "train":
+            if vivos_root != "":
+                self.walker.extend(self.init_vivos(vivos_root, vivos_subset))
+            if vlsp_root != "":
+                self.walker.extend(self.init_vlsp(vlsp_root))
+            if podcasts_root != "":
+                self.walker.extend(self.init_VNPodcast(podcasts_root))
+            if fpt_root != "":
+                self.walker.extend(self.init_FPT(fpt_root))
+            if self_record_root != "":
+                self.walker.extend(self.init_nlp_record(self_record_root))
+            if youtube_root != "":
+                self.walker.extend(self.init_youtube(youtube_root))
+        else:
             self.walker.extend(self.init_vivos(vivos_root, vivos_subset))
-        if vlsp_root != "":
-            self.walker.extend(self.init_vlsp(vlsp_root))
-        if podcasts_root != "":
-            self.walker.extend(self.init_VNPodcast(podcasts_root))
-        if fpt_root != "":
-            self.walker.extend(self.init_FPT(fpt_root))
-        if self_record_root != "":
-            self.walker.extend(self.init_nlp_record(self_record_root))
-        if youtube_root != "":
-            self.walker.extend(self.init_youtube(youtube_root))
 
     def init_vivos(self, root, subset):
         assert subset in ["train", "test"], "subset not found"

@@ -21,3 +21,6 @@ set HYDRA_FULL_ERROR=1
 
 ## Run
 - `python main.py -cp conf -cn configs`
+
+## Training Template
+- https://colab.research.google.com/drive/10dpTTy5huj7SjLst2Jj_Iff2aXLYJoBS?usp=sharing

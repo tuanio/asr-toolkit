@@ -82,7 +82,7 @@ class BPEBased(TextProcess):
             silent=silent,
             ngram_min=ngram_min,
             ngram_max=ngram_max,
-            required_tokens=required_tokens
+            required_tokens=required_tokens,
         )
         self.n_class = vocab_size
 
