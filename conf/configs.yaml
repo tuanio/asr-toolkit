@@ -15,7 +15,7 @@ text:
     - bpe
   hyper:
     char:
-      lang: vi
+      lang: en
     bpe:
       vocab_size: 1000
       pct_bpe: 1
@@ -35,7 +35,10 @@ dataset:
       vlsp_root: ...
       fpt_root: ...
       n_fft: ${general.n_fft}
-  selected: compose
+    librispeech:
+      clean_path: ...
+      n_fft: ${general.n_fft}
+  selected: librispeech
 
 model:
   encoder:
@@ -82,7 +85,7 @@ model:
       - lstm
       - transformer
       - none
-    selected: lstm
+    selected: transformer
     hyper:
       lstm:
         hidden_size: 320
@@ -97,7 +100,7 @@ model:
         d_model: ${model.encoder.hyper.transformer.d_model}
         nhead: 8
         num_layers: 6
-        dim_feedforward: 1024
+        dim_feedforward: 2048
         dropout: 0.1
         activation: relu
         layer_norm_eps: 1e-05
@@ -109,7 +112,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: rnnt
+    selected: aed
     hyper:
       ctc:
         log_idx: ${general.log_idx}

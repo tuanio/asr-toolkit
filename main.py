@@ -1,6 +1,6 @@
 import torch
 from torch import nn, Tensor
-from asr_toolkit.data.dataset import VivosDataset, ComposeDataset
+from asr_toolkit.data.dataset import VivosDataset, ComposeDataset, LibriSpeechDataset
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
@@ -78,6 +78,11 @@ def main(cfg: DictConfig):
         test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
+    elif cfg.dataset.selected == 'librispeech':
+        train_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='train100')
+        val_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='dev')
+        test_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='test')
+        predict_set = test_set
 
     print("Done setup dataset!")
 
@@ -87,7 +92,7 @@ def main(cfg: DictConfig):
         text_process = CharacterBased(**cfg.text.hyper.char)
     elif cfg.text.selected == "bpe":
         text_process = BPEBased(**cfg.text.hyper.bpe)
-        
+
         try:
             print("Openning text corpus")
             with open("text_corpus.pkl", "rb") as f:
