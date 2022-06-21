@@ -56,11 +56,17 @@ class CharacterBased(TextProcess):
         self.eos_id = 2
         self.blank_id = 0
 
+    def tokenize(self, s: str) -> List:
+        return list(s)
+
     def text2int(self, s: str) -> torch.Tensor:
-        return torch.Tensor([self.vocab[i] for i in s.lower()])
+        return torch.Tensor([self.vocab[i] for i in s])
 
     def int2text(self, s: torch.Tensor) -> str:
-        return "".join([self.list_vocab[i] for i in s if i > 2])
+        s = "".join([self.list_vocab[i] for i in s])
+        s = s.strip("<e>")
+        s = s.strip("<s>")
+        return s
 
 
 class BPEBased(TextProcess):
@@ -75,6 +81,9 @@ class BPEBased(TextProcess):
         required_tokens=None,
     ):
         super().__init__()
+        self.eow = "<e>"
+        self.sow = "<s>"
+        self.pad = "<p>"
         self.encoder = bpe.Encoder(
             vocab_size=vocab_size,
             pct_bpe=pct_bpe,
@@ -82,15 +91,17 @@ class BPEBased(TextProcess):
             silent=silent,
             ngram_min=ngram_min,
             ngram_max=ngram_max,
-            required_tokens=required_tokens,
+            EOW=self.eow,
+            SOW=self.sow,
+            PAD=self.pad
         )
         self.n_class = vocab_size
 
     def fit(self, text_corpus: str = ""):
         self.encoder.fit(text_corpus)
-        self.blank_id = self.encoder.word_vocab["__blank"]
-        self.sos_id = self.encoder.bpe_vocab["__sow"]
-        self.eos_id = self.encoder.bpe_vocab["__eow"]
+        self.blank_id = self.encoder.word_vocab[self.pad]
+        self.sos_id = self.encoder.bpe_vocab[self.sow]
+        self.eos_id = self.encoder.bpe_vocab[self.eow]
 
     def tokenize(self, text: str):
         return self.encoder.tokenize(text)
@@ -108,4 +119,4 @@ class BPEBased(TextProcess):
 
     def load(self, in_path):
         self.encoder = self.encoder.load(in_path)
-        self.blank_id = self.encoder.word_vocab["__blank"]
+        self.blank_id = self.encoder.word_vocab[self.pad]

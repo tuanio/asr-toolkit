@@ -72,6 +72,8 @@ class DataModule(pl.LightningDataModule):
         # batch, time, feature
         specs = torch.nn.utils.rnn.pad_sequence(specs, batch_first=True)
 
+        s = s.lower()
+        s = self.text_process.tokenize(s) + ["<e>"] # preformat string text
         trans = [self.text_process.text2int(s) for s in trans]
         target_lengths = torch.IntTensor([s.size(0) for s in trans])
         trans = torch.nn.utils.rnn.pad_sequence(trans, batch_first=True).to(
