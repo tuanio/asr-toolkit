@@ -27,8 +27,6 @@ class BaseModel(pl.LightningModule):
     def get_wer(
         self, targets: Tensor, outputs: Tensor, with_blank: bool = True
     ) -> Tuple[List[str], List[str], float]:
-        assert decode_type in ['with_blank', 'no_blank']
-
         argmax = outputs.argmax(-1)
         label_sequences = [self.text_process.int2text(sent) for sent in targets]
         if with_blank:
