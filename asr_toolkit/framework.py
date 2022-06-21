@@ -25,11 +25,16 @@ class BaseModel(pl.LightningModule):
         return [optimizer], [lr_scheduler]
 
     def get_wer(
-        self, targets: Tensor, outputs: Tensor
+        self, targets: Tensor, outputs: Tensor, with_blank: bool = True
     ) -> Tuple[List[str], List[str], float]:
+        assert decode_type in ['with_blank', 'no_blank']
+
         argmax = outputs.argmax(-1)
         label_sequences = [self.text_process.int2text(sent) for sent in targets]
-        predict_sequences = [self.text_process.decode(sent) for sent in argmax]
+        if with_blank:
+            predict_sequences = [self.text_process.decode(sent) for sent in argmax]
+        else:
+            predict_sequences = [self.text_process.int2text(sent) for sent in argmax]
         wer = torch.Tensor(
             [
                 jiwer.wer(truth, hypot)
@@ -181,7 +186,7 @@ class AEDModel(BaseModel):
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs, False)
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -200,7 +205,7 @@ class AEDModel(BaseModel):
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs, False)
 
         self.log("test loss", loss)
         self.log("test wer", wer)
@@ -536,7 +541,7 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs, False)
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -567,7 +572,7 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs, False)
 
         self.log("test loss", loss)
         self.log("test wer", wer)
