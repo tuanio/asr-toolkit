@@ -78,7 +78,6 @@ class BPEBased(TextProcess):
         silent=True,
         ngram_min=2,
         ngram_max=2,
-        required_tokens=None,
     ):
         super().__init__()
         self.eow = "<e>"
