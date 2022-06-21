@@ -61,6 +61,11 @@ class DataModule(pl.LightningDataModule):
             pin_memory=True,
         )
 
+    def tokenize(self, s):
+        s = s.lower()
+        s = self.text_process.tokenize(s) + ["<e>"]
+        return s
+
     def _collate_fn(self, batch):
         """
         Take feature and input, transform and then padding it
@@ -72,9 +77,7 @@ class DataModule(pl.LightningDataModule):
         # batch, time, feature
         specs = torch.nn.utils.rnn.pad_sequence(specs, batch_first=True)
 
-        s = s.lower()
-        s = self.text_process.tokenize(s) + ["<e>"] # preformat string text
-        trans = [self.text_process.text2int(s) for s in trans]
+        trans = [self.text_process.text2int(self.tokenize(s)) for s in trans]
         target_lengths = torch.IntTensor([s.size(0) for s in trans])
         trans = torch.nn.utils.rnn.pad_sequence(trans, batch_first=True).to(
             dtype=torch.int
