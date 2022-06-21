@@ -63,10 +63,7 @@ class CharacterBased(TextProcess):
         return torch.Tensor([self.vocab[i] for i in s])
 
     def int2text(self, s: torch.Tensor) -> str:
-        s = "".join([self.list_vocab[i] for i in s])
-        s = s.strip("<e>")
-        s = s.strip("<s>")
-        return s
+        return "".join([self.list_vocab[i] for i in s]).strip("<s>")
 
 
 class BPEBased(TextProcess):
