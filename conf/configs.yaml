@@ -26,6 +26,7 @@ dataset:
   all_types:
     - vivos
     - compose
+    - librispeech
   hyper:
     vivos:
       root: D:\NCKH 2022\vivos
