@@ -65,7 +65,7 @@ class CharacterBased(TextProcess):
     def int2text(self, s: torch.Tensor) -> str:
         text = ''
         for i in s:
-            if i == '<e>':
+            if i == self.eos_id:
                 break
             text += self.list_vocab[i]
         return text
