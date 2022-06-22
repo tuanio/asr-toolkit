@@ -539,7 +539,9 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs, False)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, decoder_outputs, False
+        )
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -570,7 +572,9 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, decoder_outputs, False)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, decoder_outputs, False
+        )
 
         self.log("test loss", loss)
         self.log("test wer", wer)

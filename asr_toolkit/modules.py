@@ -84,20 +84,20 @@ class SpecAugment(nn.Module):
 
 class AdditiveAttention(nn.Module):
     """
-        Applies a additive attention (bahdanau) mechanism on the output features from the decoder.
-        Additive attention proposed in "Neural Machine Translation by Jointly Learning to Align and Translate" paper.
-        Args:
-            hidden_dim (int): dimesion of hidden state vector
-        Inputs: query, value
-            - **query** (batch_size, q_len, hidden_dim): tensor containing the output features from the decoder.
-            - **key** (batch_size, v_len, hidden_dim): tensor containing features of the encoded input sequence.
-            - **value** (batch_size, v_len, hidden_dim): tensor containing features of the encoded input sequence.
-        Returns: context, attn
-            - **context**: tensor containing the context vector from attention mechanism.
-            - **attn**: tensor containing the alignment from the encoder outputs.
-        Reference:
-            - **Neural Machine Translation by Jointly Learning to Align and Translate**: https://arxiv.org/abs/1409.0473
-        Source: https://github.com/sooftware/attentions/blob/master/attentions.py
+    Applies a additive attention (bahdanau) mechanism on the output features from the decoder.
+    Additive attention proposed in "Neural Machine Translation by Jointly Learning to Align and Translate" paper.
+    Args:
+        hidden_dim (int): dimesion of hidden state vector
+    Inputs: query, value
+        - **query** (batch_size, q_len, hidden_dim): tensor containing the output features from the decoder.
+        - **key** (batch_size, v_len, hidden_dim): tensor containing features of the encoded input sequence.
+        - **value** (batch_size, v_len, hidden_dim): tensor containing features of the encoded input sequence.
+    Returns: context, attn
+        - **context**: tensor containing the context vector from attention mechanism.
+        - **attn**: tensor containing the alignment from the encoder outputs.
+    Reference:
+        - **Neural Machine Translation by Jointly Learning to Align and Translate**: https://arxiv.org/abs/1409.0473
+    Source: https://github.com/sooftware/attentions/blob/master/attentions.py
     """
 
     def __init__(self, hidden_dim: int) -> None:
@@ -154,7 +154,7 @@ class Linear(nn.Module):
 
 
 class View(nn.Module):
-    """ Wrapper class of torch.view() for Sequential module. """
+    """Wrapper class of torch.view() for Sequential module."""
 
     def __init__(self, shape: tuple, contiguous: bool = False):
         super(View, self).__init__()
@@ -169,7 +169,7 @@ class View(nn.Module):
 
 
 class Transpose(nn.Module):
-    """ Wrapper class of torch.transpose() for Sequential module. """
+    """Wrapper class of torch.transpose() for Sequential module."""
 
     def __init__(self, shape: tuple):
         super(Transpose, self).__init__()

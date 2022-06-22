@@ -23,10 +23,17 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
         n_fft=159,
     ):
         """
-            subset \in ['train100', 'train360', 'train460', 'train960', 'dev', 'test']
+        subset \in ['train100', 'train360', 'train460', 'train960', 'dev', 'test']
         """
-        assert subset in ['train100', 'train360', 'train460', 'train960', 'dev', 'test'], "Librispeech subset not found!"
-        
+        assert subset in [
+            "train100",
+            "train360",
+            "train460",
+            "train960",
+            "dev",
+            "test",
+        ], "Librispeech subset not found!"
+
         self.spect_func = torchaudio.transforms.Spectrogram(n_fft=n_fft)
 
         self.list_url = [clean_path + "train-clean-100"]
@@ -59,7 +66,7 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
 
     def load_librispeech_item(self, fileid, path):
         """
-            transform audio pack to spectrogram
+        transform audio pack to spectrogram
         """
 
         speaker_id, chapter_id, utterance_id = fileid.split("-")

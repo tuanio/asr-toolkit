@@ -63,7 +63,7 @@ class CharacterBased(TextProcess):
         return torch.Tensor([self.vocab[i] for i in s])
 
     def int2text(self, s: torch.Tensor) -> str:
-        text = ''
+        text = ""
         for i in s:
             if i == self.eos_id:
                 break
@@ -94,7 +94,7 @@ class BPEBased(TextProcess):
             ngram_max=ngram_max,
             EOW=self.eow,
             SOW=self.sow,
-            PAD=self.pad
+            PAD=self.pad,
         )
         self.n_class = vocab_size
 

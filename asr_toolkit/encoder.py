@@ -155,11 +155,11 @@ class ConformerEncoder(nn.Module):
         )
 
     def count_parameters(self) -> int:
-        """ Count parameters of encoder """
+        """Count parameters of encoder"""
         return sum([p.numel for p in self.parameters()])
 
     def update_dropout(self, dropout_p: float) -> None:
-        """ Update dropout probability of encoder """
+        """Update dropout probability of encoder"""
         for name, child in self.named_children():
             if isinstance(child, nn.Dropout):
                 child.p = dropout_p
@@ -249,11 +249,11 @@ class Conformer(nn.Module):
         self.output_dim = encoder_dim
 
     def count_parameters(self) -> int:
-        """ Count parameters of encoder """
+        """Count parameters of encoder"""
         return self.encoder.count_parameters()
 
     def update_dropout(self, dropout_p) -> None:
-        """ Update dropout probability of model """
+        """Update dropout probability of model"""
         self.encoder.update_dropout(dropout_p)
 
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
@@ -272,7 +272,7 @@ class Conformer(nn.Module):
 
 
 class VGGExtractor(nn.Module):
-    """ VGG extractor for ASR described in https://arxiv.org/pdf/1706.02737.pdf"""
+    """VGG extractor for ASR described in https://arxiv.org/pdf/1706.02737.pdf"""
 
     def __init__(self, init_dim: int = 64, hide_dim: int = 128, input_dim: int = 80):
         super(VGGExtractor, self).__init__()

@@ -45,11 +45,11 @@ class Encoder(nn.Module):
 
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
         """
-            input
-                inputs: batch of spectrogram
-                input_lengths: length of each spectrogram
-            output
-                outputs, output_lengths
+        input
+            inputs: batch of spectrogram
+            input_lengths: length of each spectrogram
+        output
+            outputs, output_lengths
         """
         for layer in self.layers:
             inputs, input_lengths = layer(inputs, input_lengths)
@@ -78,10 +78,12 @@ def main(cfg: DictConfig):
         test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
-    elif cfg.dataset.selected == 'librispeech':
-        train_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='train100')
-        val_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='dev')
-        test_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset='test')
+    elif cfg.dataset.selected == "librispeech":
+        train_set = LibriSpeechDataset(
+            **cfg.dataset.hyper.librispeech, subset="train100"
+        )
+        val_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset="dev")
+        test_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset="test")
         predict_set = test_set
 
     print("Done setup dataset!")
@@ -115,7 +117,12 @@ def main(cfg: DictConfig):
 
     # create data module
     dm = DataModule(
-        train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size,
+        train_set,
+        val_set,
+        test_set,
+        predict_set,
+        text_process,
+        cfg.general.batch_size,
     )
 
     steps_per_epoch = len(dm.train_dataloader())

@@ -49,11 +49,11 @@ class LSTMDecoder(nn.Module):
         hidden_state: Tensor = None,
     ) -> Tuple[Tensor, Tensor]:
         """
-            input
-                targets: batch of sequence label integer
-                encoder_outputs (optional): output of encoder
-                    -> (batch size, seq len, output_dim)
-                hidden_state (optional): hidden state of the last decoder
+        input
+            targets: batch of sequence label integer
+            encoder_outputs (optional): output of encoder
+                -> (batch size, seq len, output_dim)
+            hidden_state (optional): hidden state of the last decoder
         """
         embedded = self.embedding(targets)
         outputs, hidden_state = self.lstm(embedded, hidden_state)
