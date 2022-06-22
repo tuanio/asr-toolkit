@@ -45,7 +45,7 @@ class CharacterBased(TextProcess):
         for lang, vocab in origin_list_vocab.items()
     }
 
-    def __init__(self, lang: str = "vi"):
+    def __init__(self, lang: str = "vi", **kwargs):
         super().__init__()
         self.lang = lang
         assert self.lang in ["vi", "en"], "Language not found"
@@ -80,6 +80,7 @@ class BPEBased(TextProcess):
         silent=True,
         ngram_min=2,
         ngram_max=2,
+        **kwargs
     ):
         super().__init__()
         self.eow = "<e>"
