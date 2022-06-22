@@ -23,5 +23,5 @@ set HYDRA_FULL_ERROR=1
 - `python main.py -cp conf -cn configs`
 
 ## Training Template
-- **Conformer-Transformer-AED Vivos:** https://colab.research.google.com/drive/10dpTTy5huj7SjLst2Jj_Iff2aXLYJoBS?usp=sharing
-- **Conformer-Transformer-AED LibriSpeech:** https://www.kaggle.com/code/tuannguyenvananh/conformer-transformer-aed-librispeech
+- **Conformer-Transformer-AED Vivos (WER: 10%):** https://colab.research.google.com/drive/10dpTTy5huj7SjLst2Jj_Iff2aXLYJoBS?usp=sharing
+- **Conformer-Transformer-AED LibriSpeech (WER 0%):** https://www.kaggle.com/code/tuannguyenvananh/conformer-transformer-aed-librispeech
