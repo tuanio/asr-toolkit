@@ -114,11 +114,14 @@ class CTCModel(BaseModel):
             targets, inputs, input_lengths
         )
 
-        self.log("validation loss", loss)
-        self.log("validation wer", wer)
+        self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -130,15 +133,14 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
 
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
-
         self.log("test loss", loss)
-        self.log("test wer", wer)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -247,11 +249,14 @@ class AEDModel(BaseModel):
             targets, inputs, input_lengths
         )
 
-        self.log("validation loss", loss)
-        self.log("validation wer", wer)
+        self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -269,10 +274,13 @@ class AEDModel(BaseModel):
         )
 
         self.log("test loss", loss)
-        self.log("test wer", wer)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -457,11 +465,14 @@ class RNNTModel(BaseModel):
             targets, inputs, input_lengths
         )
 
-        self.log("validation loss", loss)
-        self.log("validation wer", wer)
+        self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -486,10 +497,13 @@ class RNNTModel(BaseModel):
         )
 
         self.log("test loss", loss)
-        self.log("test wer", wer)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -631,11 +645,14 @@ class JointCTCAttentionModel(BaseModel):
             targets, inputs, input_lengths
         )
 
-        self.log("validation loss", loss)
-        self.log("validation wer", wer)
+        self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
 
@@ -665,9 +682,12 @@ class JointCTCAttentionModel(BaseModel):
         )
 
         self.log("test loss", loss)
-        self.log("test wer", wer)
 
         if batch_idx % self.log_idx == 0:
+            label_sequences, predict_sequences, wer = self.get_wer(
+                targets, inputs, input_lengths
+            )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
+            self.log("test wer", wer)
 
         return loss, wer
