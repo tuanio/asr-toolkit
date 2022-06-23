@@ -30,12 +30,7 @@ class RelativeMultiHeadAttention(nn.Module):
         - **outputs**: Tensor produces by relative multi head attention module.
     """
 
-    def __init__(
-        self,
-        d_model: int = 512,
-        num_heads: int = 16,
-        dropout_p: float = 0.1,
-    ):
+    def __init__(self, d_model: int = 512, num_heads: int = 16, dropout_p: float = 0.1):
         super(RelativeMultiHeadAttention, self).__init__()
         assert d_model % num_heads == 0, "d_model % num_heads should be zero."
         self.d_model = d_model

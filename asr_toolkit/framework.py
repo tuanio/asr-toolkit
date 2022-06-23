@@ -25,14 +25,10 @@ class BaseModel(pl.LightningModule):
         return [optimizer], [lr_scheduler]
 
     def get_wer(
-        self, targets: Tensor, outputs: Tensor, with_blank: bool = True
+        self, targets: Tensor, inputs: Tensor, input_lengths: Tensor
     ) -> Tuple[List[str], List[str], float]:
-        argmax = outputs.argmax(-1)
-        label_sequences = [self.text_process.int2text(sent) for sent in targets]
-        if with_blank:
-            predict_sequences = [self.text_process.decode(sent) for sent in argmax]
-        else:
-            predict_sequences = [self.text_process.int2text(sent) for sent in argmax]
+        predict_sequences = self.recognize(inputs, input_lengths)
+        label_sequences = list(map(self.text_process.int2text, targets))
         wer = torch.Tensor(
             [
                 jiwer.wer(truth, hypot)
@@ -75,6 +71,25 @@ class CTCModel(BaseModel):
         outputs = F.log_softmax(outputs, -1)
         return outputs, output_lengths
 
+    @torch.no_grad()
+    def decode(self, encoder_output: Tensor) -> str:
+        encoder_output = encoder_output.unsqueeze(0)
+        outputs = F.log_softmax(self.out(encoder_output), -1)
+        argmax = outputs.squeeze(0).argmax(-1)
+        return self.text_process.decode(argmax)
+
+    @torch.no_grad()
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
+        outputs = list()
+
+        encoder_outputs, _ = self.encoder(inputs, input_lengths)
+
+        for encoder_output in encoder_outputs:
+            predict = self.decode(encoder_output)
+            outputs.append(predict)
+
+        return outputs
+
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs, output_lengths = self(inputs, input_lengths)
@@ -95,7 +110,9 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -113,7 +130,9 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
         )
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("test loss", loss)
         self.log("test wer", wer)
@@ -162,6 +181,46 @@ class AEDModel(BaseModel):
         outputs = F.log_softmax(outputs, -1)
         return outputs
 
+    @torch.no_grad()
+    def decode(self, encoder_output: Tensor, max_length: int) -> str:
+        encoder_output = encoder_output.unsqueeze(0)
+        targets = encoder_output.new_tensor(
+            [self.text_process.sos_id], dtype=torch.int
+        )
+
+        last_token = -1
+        hidden_state = None
+        for i in range(max_length):
+            
+            targets = targets.unsqueeze(0)
+
+            decoder_outputs, hidden_state = self.decoder(
+                targets, encoder_output, hidden_state
+            )
+            outputs = F.log_softmax(self.out(decoder_outputs), -1)
+
+            last_token = outputs.squeeze(0).argmax(-1)[-1]
+
+            targets = torch.concat((targets.squeeze(0), last_token.unsqueeze(0)), -1)
+
+            if last_token == self.text_process.eos_id:
+                break
+
+        return self.text_process.int2text(targets)
+
+    @torch.no_grad()
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
+        encoder_outputs, _ = self.encoder(inputs, input_lengths)
+
+        outputs = list()
+        max_length = encoder_outputs.size(1)
+
+        for encoder_output in encoder_outputs:
+            predict = self.decode(encoder_output, max_length)
+            outputs.append(predict)
+
+        return outputs
+
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
         outputs = self(inputs, input_lengths, targets, target_lengths)
@@ -184,7 +243,9 @@ class AEDModel(BaseModel):
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs, False)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("validation loss", loss)
         self.log("validation wer", wer)
@@ -203,7 +264,9 @@ class AEDModel(BaseModel):
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        label_sequences, predict_sequences, wer = self.get_wer(targets, outputs, False)
+        label_sequences, predict_sequences, wer = self.get_wer(
+            targets, inputs, input_lengths
+        )
 
         self.log("test loss", loss)
         self.log("test wer", wer)
@@ -300,7 +363,7 @@ class RNNTModel(BaseModel):
         )
 
     @torch.no_grad()
-    def decode(self, encoder_output: Tensor, max_length: int) -> Tensor:
+    def decode(self, encoder_output: Tensor, max_length: int) -> str:
         """
         Decode `encoder_outputs`.
         Args:
@@ -323,16 +386,17 @@ class RNNTModel(BaseModel):
             step_output = self.joint(
                 encoder_output[t].view(-1), decoder_output.view(-1)
             )
-            step_output = step_output.softmax(dim=0)
             pred_token = step_output.argmax(dim=0)
+            print(pred_token)
             pred_token = int(pred_token.item())
             pred_tokens.append(pred_token)
             decoder_input = step_output.new_tensor([[pred_token]], dtype=torch.long)
 
-        return torch.LongTensor(pred_tokens)
+        pred_tokens = torch.LongTensor(pred_tokens)
+        return self.text_process.int2text(pred_tokens)
 
     @torch.no_grad()
-    def recognize(self, inputs: Tensor, input_lengths: Tensor):
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
         """
         Recognize input speech. This method consists of the forward of the encoder and the decode() of the decoder.
         Args:
@@ -350,8 +414,6 @@ class RNNTModel(BaseModel):
         for encoder_output in encoder_outputs:
             decoded_seq = self.decode(encoder_output, max_length)
             outputs.append(decoded_seq)
-
-        outputs = torch.stack(outputs, dim=1).transpose(0, 1)
 
         return outputs
 
@@ -431,23 +493,6 @@ class RNNTModel(BaseModel):
 
         return loss, wer
 
-    def get_wer(
-        self, targets: Tensor, inputs: Tensor, input_lengths: Tensor
-    ) -> Tuple[List[str], List[str], float]:
-        predict_sequences = self.recognize(inputs, input_lengths)
-        predict_sequences = [
-            self.text_process.int2text(sent) for sent in predict_sequences
-        ]
-        label_sequences = [self.text_process.int2text(sent) for sent in targets]
-        wer = torch.Tensor(
-            [
-                jiwer.wer(truth, hypot)
-                for truth, hypot in zip(label_sequences, predict_sequences)
-            ]
-        )
-        wer = torch.mean(wer).item()
-        return label_sequences, predict_sequences, wer
-
 
 class JointCTCAttentionModel(BaseModel):
     """attention-based encoder-decoder"""
@@ -478,9 +523,18 @@ class JointCTCAttentionModel(BaseModel):
         self.log_idx = log_idx
         self.save_hyperparameters()
 
-    def forward(self, inputs, input_lengths, targets, target_lengths) -> Tensor:
+    def forward(
+        self,
+        inputs: Tensor,
+        input_lengths: Tensor,
+        targets: Tensor,
+        target_lengths: Tensor,
+        hidden_state: Tensor = None,
+    ) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs, hidden_state = self.decoder(targets, encoder_outputs)
+        decoder_outputs, hidden_state = self.decoder(
+            targets, encoder_outputs, hidden_state
+        )
 
         encoder_outputs = self.encoder_outputs(encoder_outputs)
         decoder_outputs = self.decoder_outputs(decoder_outputs)
@@ -489,6 +543,43 @@ class JointCTCAttentionModel(BaseModel):
         decoder_outputs = F.log_softmax(decoder_outputs, -1)
 
         return encoder_outputs, encoder_output_lengths, decoder_outputs
+
+    @torch.no_grad()
+    def decode(self, encoder_output: Tensor, max_length: int) -> str:
+        encoder_output = encoder_output.unsqueeze(0)
+
+        targets = encoder_output.new_tensor([self.text_process.sos_id], dtype=torch.int)
+
+        last_token = -1
+        hidden_state = None
+        for i in range(max_length):
+            if last_token == self.text_process.eos_id:
+                break
+            targets = targets.unsqueeze(0)
+
+            decoder_outputs, hidden_state = self.decoder(
+                targets, encoder_output, hidden_state
+            )
+            outputs = F.log_softmax(self.decoder_outputs(decoder_outputs), -1)
+
+            last_token = outputs.squeeze(0).argmax(-1)[-1]
+
+            targets = torch.concat((targets.squeeze(0), last_token.unsqueeze(0)), -1)
+
+        return self.text_process.int2text(targets)
+
+    @torch.no_grad()
+    def recognize(self, inputs: Tensor, input_lengths: Tensor) -> List[str]:
+        encoder_outputs, _ = self.encoder(inputs, input_lengths)
+
+        outputs = list()
+        max_length = encoder_outputs.size(1)
+
+        for encoder_output in encoder_outputs:
+            predict = self.decode(encoder_output, max_length)
+            outputs.append(predict)
+
+        return outputs
 
     def criterion(self, ctc_loss: Tensor, ce_loss: Tensor) -> Tensor:
         return self.ctc_weight * ctc_loss + self.attention_weight * ce_loss
@@ -513,10 +604,7 @@ class JointCTCAttentionModel(BaseModel):
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
 
         loss = self.criterion(ctc_loss, ce_loss)
-
-        self.log("train loss", loss)
-
-        return loss
+        return self.text_process.int2text(targets)
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -540,7 +628,7 @@ class JointCTCAttentionModel(BaseModel):
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(
-            targets, decoder_outputs, False
+            targets, inputs, input_lengths
         )
 
         self.log("validation loss", loss)
@@ -573,7 +661,7 @@ class JointCTCAttentionModel(BaseModel):
         loss = self.criterion(ctc_loss, ce_loss)
 
         label_sequences, predict_sequences, wer = self.get_wer(
-            targets, decoder_outputs, False
+            targets, inputs, input_lengths
         )
 
         self.log("test loss", loss)

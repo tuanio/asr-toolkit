@@ -6,6 +6,7 @@ from asr_toolkit.text import CharacterBased, BPEBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
 from asr_toolkit.decoder import LSTMDecoder, TransformerDecoder
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
+from asr_toolkit.utils import load_and_transform
 import pytorch_lightning as pl
 
 import hydra
@@ -80,10 +81,14 @@ def main(cfg: DictConfig):
         predict_set = test_set
     elif cfg.dataset.selected == "librispeech":
         train_set = LibriSpeechDataset(
-            **cfg.dataset.hyper.librispeech, subset="train100"
+            **cfg.dataset.hyper.librispeech, subset="test-other"
         )
-        val_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset="dev")
-        test_set = LibriSpeechDataset(**cfg.dataset.hyper.librispeech, subset="test")
+        val_set = LibriSpeechDataset(
+            **cfg.dataset.hyper.librispeech, subset="test-other"
+        )
+        test_set = LibriSpeechDataset(
+            **cfg.dataset.hyper.librispeech, subset="test-other"
+        )
         predict_set = test_set
 
     print("Done setup dataset!")
@@ -117,12 +122,7 @@ def main(cfg: DictConfig):
 
     # create data module
     dm = DataModule(
-        train_set,
-        val_set,
-        test_set,
-        predict_set,
-        text_process,
-        cfg.general.batch_size,
+        train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size
     )
 
     steps_per_epoch = len(dm.train_dataloader())
@@ -190,6 +190,9 @@ def main(cfg: DictConfig):
 
     ckpt_path = cfg.ckpt.ckpt_path
 
+    if cfg.ckpt.use_ckpt and ckpt_path.endswith('.ckpt'):
+        framework = framework.load_from_checkpoint(ckpt_path)
+
     if cfg.session.train:
         trainer.fit(model=framework, datamodule=dm, ckpt_path=ckpt_path)
 
@@ -199,10 +202,14 @@ def main(cfg: DictConfig):
     if cfg.session.test:
         trainer.test(model=framework, datamodule=dm, ckpt_path=ckpt_path)
 
-    if cfg.session.predict:
-        print("Loading model")
-        model = framework.load_from_checkpoint(ckpt_path)
-        print(model.eval())
+    if cfg.session.predict.is_pred:
+        # print("Loading model")
+        # framework = framework.load_from_checkpoint(ckpt_path)
+        inputs = load_and_transform(cfg.session.predict.audio_path)
+        input_lengths = torch.LongTensor([[inputs.size(1)]])
+        predicts = framework.recognize(inputs, input_lengths)
+        print("Predict:", *predicts)
+
 
 if __name__ == "__main__":
     main()

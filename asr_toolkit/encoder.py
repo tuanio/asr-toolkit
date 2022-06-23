@@ -7,10 +7,7 @@ from .modules import Linear
 
 from .feed_forward import FeedForwardModule
 from .attention import MultiHeadedSelfAttentionModule
-from .convolution import (
-    ConformerConvModule,
-    ConvSubsampling,
-)
+from .convolution import ConformerConvModule, ConvSubsampling
 from .modules import ResidualConnectionModule, Linear, SpecAugment
 
 
@@ -68,7 +65,7 @@ class ConformerBlock(nn.Module):
                     d_model=encoder_dim,
                     num_heads=num_attention_heads,
                     dropout_p=attention_dropout_p,
-                ),
+                )
             ),
             ResidualConnectionModule(
                 module=ConformerConvModule(
@@ -76,7 +73,7 @@ class ConformerBlock(nn.Module):
                     kernel_size=conv_kernel_size,
                     expansion_factor=conv_expansion_factor,
                     dropout_p=conv_dropout_p,
-                ),
+                )
             ),
             ResidualConnectionModule(
                 module=FeedForwardModule(

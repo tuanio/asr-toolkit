@@ -63,7 +63,7 @@ class DataModule(pl.LightningDataModule):
 
     def tokenize(self, s):
         s = s.lower()
-        s = self.text_process.tokenize(s) + ["<e>"]
+        s = ["<s>"] + self.text_process.tokenize(s) + ["<e>"]
         return s
 
     def _collate_fn(self, batch):

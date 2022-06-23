@@ -30,8 +30,10 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
             "train360",
             "train460",
             "train960",
-            "dev",
-            "test",
+            "dev-clean",
+            "test-clean",
+            "dev-other",
+            "test-other",
         ], "Librispeech subset not found!"
 
         self.spect_func = torchaudio.transforms.Spectrogram(n_fft=n_fft)
@@ -45,16 +47,14 @@ class LibriSpeechDataset(torch.utils.data.Dataset):
         elif subset == "train960":
             self.list_url += [clean_path + "train-clean-360"]
             self.list_url += [other_path + "train-clean-360"]
-        elif subset == "dev":
-            self.list_url = [clean_path + "dev-clean"]
-        elif subset == "test":
-            self.list_url = [clean_path + "test-clean"]
+        else:
+            self.list_url = [clean_path + subset]
 
+        sep = os.sep
         self._walker = []
         for path in self.list_url:
-            walker = [
-                (str(p.stem), path) for p in Path(path).glob("*/*/*" + self.ext_audio)
-            ]
+            files_path = f"*{sep}*{sep}*" + self.ext_audio
+            walker = [(str(p.stem), path) for p in Path(path).glob(files_path)]
             self._walker.extend(walker)
 
     def __len__(self):
