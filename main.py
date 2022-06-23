@@ -188,9 +188,9 @@ def main(cfg: DictConfig):
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
     print("Done setup trainer!")
 
-    ckpt_path = cfg.ckpt.ckpt_path
-
-    if cfg.ckpt.use_ckpt and ckpt_path.endswith('.ckpt'):
+    ckpt_path = None
+    if cfg.ckpt.use_ckpt and cfg.ckpt.ckpt_path.endswith('.ckpt'):
+        ckpt_path = cfg.ckpt.ckpt_path
         framework = framework.load_from_checkpoint(ckpt_path)
 
     if cfg.session.train:
