@@ -188,15 +188,21 @@ def main(cfg: DictConfig):
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)
     print("Done setup trainer!")
 
+    ckpt_path = cfg.ckpt.ckpt_path
+
     if cfg.session.train:
-        trainer.fit(model=framework, datamodule=dm)
+        trainer.fit(model=framework, datamodule=dm, ckpt_path=ckpt_path)
 
     if cfg.session.validate:
-        trainer.validate(model=framework, datamodule=dm)
+        trainer.validate(model=framework, datamodule=dm, ckpt_path=ckpt_path)
 
     if cfg.session.test:
-        trainer.test(model=framework, datamodule=dm)
+        trainer.test(model=framework, datamodule=dm, ckpt_path=ckpt_path)
 
+    if cfg.session.predict:
+        print("Loading model")
+        model = framework.load_from_checkpoint(ckpt_path)
+        print(model.eval())
 
 if __name__ == "__main__":
     main()

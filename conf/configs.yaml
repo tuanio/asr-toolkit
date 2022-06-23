@@ -162,3 +162,7 @@ session:
   train: False
   validate: False
   test: False
+  predict: True
+
+ckpt:
+  ckpt_path: D:\WeAi\RandD\speech recognition\deploy model\tb_logs\model_logs\version_0\checkpoints\epoch=9-step=8920.ckpt
