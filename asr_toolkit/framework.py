@@ -123,7 +123,7 @@ class CTCModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -142,7 +142,7 @@ class CTCModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
 
 class AEDModel(BaseModel):
@@ -258,7 +258,7 @@ class AEDModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -282,7 +282,7 @@ class AEDModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
 
 class RNNTModel(BaseModel):
@@ -474,7 +474,7 @@ class RNNTModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
     def test_step(self, batch: Tensor, batch_idx: int):
         (
@@ -505,7 +505,7 @@ class RNNTModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
 
 class JointCTCAttentionModel(BaseModel):
@@ -654,7 +654,7 @@ class JointCTCAttentionModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
@@ -690,4 +690,4 @@ class JointCTCAttentionModel(BaseModel):
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
 
-        return loss, wer
+        return loss
