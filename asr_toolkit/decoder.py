@@ -2,6 +2,7 @@ import torch
 from torch import nn, Tensor
 from typing import Tuple
 
+from .modules import PositionalEncoding
 
 class LSTMDecoder(nn.Module):
     def __init__(
@@ -83,6 +84,7 @@ class TransformerDecoder(nn.Module):
     ):
         super().__init__()
         self.embedding = nn.Embedding(n_class, d_model)
+        self.encoding = PositionalEncoding(d_model)
         decoder_layer = nn.TransformerDecoderLayer(
             d_model,
             nhead,
@@ -101,5 +103,6 @@ class TransformerDecoder(nn.Module):
         self, targets: Tensor, encoder_outputs: Tensor, hidden_state: Tensor = None
     ) -> Tensor:
         embedded = self.embedding(targets)
-        outputs = self.decoder(tgt=embedded, memory=encoder_outputs)
+        inputs = self.encoding(embedded)
+        outputs = self.decoder(tgt=inputs, memory=encoder_outputs)
         return outputs, hidden_state

@@ -8,7 +8,7 @@ from .modules import Linear
 from .feed_forward import FeedForwardModule
 from .attention import MultiHeadedSelfAttentionModule
 from .convolution import ConformerConvModule, ConvSubsampling
-from .modules import ResidualConnectionModule, Linear, SpecAugment
+from .modules import ResidualConnectionModule, Linear, SpecAugment, PositionalEncoding
 
 
 class ConformerBlock(nn.Module):
@@ -378,6 +378,7 @@ class TransformerEncoder(nn.Module):
     ):
         super().__init__()
         self.input_proj = nn.Linear(input_dim, d_model)
+        self.encoding = PositionalEncoding(d_model)
         encoder_layer = nn.TransformerEncoderLayer(
             d_model,
             nhead,
@@ -396,5 +397,6 @@ class TransformerEncoder(nn.Module):
 
     def forward(self, inputs: Tensor, input_lengths: Tensor) -> Tuple[Tensor, Tensor]:
         outputs = self.input_proj(inputs)
+        outputs = self.encoding(outputs)
         outputs = self.transformer_encoder(outputs)
         return outputs, input_lengths
