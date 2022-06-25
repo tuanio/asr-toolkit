@@ -2,9 +2,8 @@ import torch
 from torch import nn, Tensor, optim
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import jiwer
-from typing import Tuple, List
 
 from .loss import CTCLoss, CrossEntropyLoss, RNNTLoss
 from .text import TextProcess
@@ -108,10 +107,6 @@ class CTCModel(BaseModel):
 
         loss = self.criterion(
             outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
-        )
-
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
         )
 
         self.log("test loss", loss)
@@ -245,10 +240,6 @@ class AEDModel(BaseModel):
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
-
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
@@ -268,10 +259,6 @@ class AEDModel(BaseModel):
         outputs_edited = outputs.view(bz * t, -1)
         targets_edited = targets.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
-
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
 
         self.log("test loss", loss)
 
@@ -461,10 +448,6 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths)
 
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
-
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
@@ -491,10 +474,6 @@ class RNNTModel(BaseModel):
         )
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths)
-
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
 
         self.log("test loss", loss)
 
@@ -641,10 +620,6 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
-
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
@@ -676,10 +651,6 @@ class JointCTCAttentionModel(BaseModel):
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
 
         loss = self.criterion(ctc_loss, ce_loss)
-
-        label_sequences, predict_sequences, wer = self.get_wer(
-            targets, inputs, input_lengths
-        )
 
         self.log("test loss", loss)
 
