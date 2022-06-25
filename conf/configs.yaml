@@ -32,7 +32,7 @@ dataset:
       n_fft: ${general.n_fft}
     compose:
       vivos_root: D:\NCKH 2022\vivos
-      vlsp_root: ''g
+      vlsp_root: ''
       fpt_root: ''
       n_fft: ${general.n_fft}
     librispeech:
