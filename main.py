@@ -189,7 +189,7 @@ def main(cfg: DictConfig):
     print("Done setup trainer!")
 
     ckpt_path = None
-    if cfg.ckpt.use_ckpt and cfg.ckpt.ckpt_path.endswith('.ckpt'):
+    if cfg.ckpt.use_ckpt and cfg.ckpt.ckpt_path.endswith(".ckpt"):
         ckpt_path = cfg.ckpt.ckpt_path
         framework = framework.load_from_checkpoint(ckpt_path)
 

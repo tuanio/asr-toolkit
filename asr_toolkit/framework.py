@@ -181,14 +181,12 @@ class AEDModel(BaseModel):
     @torch.no_grad()
     def decode(self, encoder_output: Tensor, max_length: int) -> str:
         encoder_output = encoder_output.unsqueeze(0)
-        targets = encoder_output.new_tensor(
-            [self.text_process.sos_id], dtype=torch.int
-        )
+        targets = encoder_output.new_tensor([self.text_process.sos_id], dtype=torch.int)
 
         last_token = -1
         hidden_state = None
         for i in range(max_length):
-            
+
             targets = targets.unsqueeze(0)
 
             decoder_outputs, hidden_state = self.decoder(

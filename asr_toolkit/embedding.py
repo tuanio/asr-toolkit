@@ -26,14 +26,23 @@ class PositionalEncoding(nn.Module):
         pe = pe.unsqueeze(0)
         self.register_buffer("pe", pe)
 
+    def forward(self, length: int) -> Tensor:
+        return self.pe[:, :length]
+
+
+class TransformerPositionalEncoding(nn.Module):
+    def __init__(self, d_model: int = 512, max_len: int = 10000) -> None:
+        super().__init__()
+        self.encoding = PositionalEncoding(d_model, max_len)
+
     def forward(self, x: Tensor) -> Tensor:
-        '''
-            x: 3d (batch, seq len, hidden)
-            or 2d (seq len, hidden)
-        '''
+        """
+        x: 3d (batch, seq len, hidden)
+        or 2d (seq len, hidden)
+        """
         if len(x.size()) == 3:
             length = x.size(1)
         elif len(x.size()) == 2:
             length = x.size(0)
-        
-        return x + self.pe[:, :length]
+
+        return x + self.encoding(length)
