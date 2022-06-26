@@ -39,7 +39,7 @@ dataset:
       clean_path: /home/tuanio/workspace/LibriSpeech/
       other_path: /home/tuanio/workspace/LibriSpeech/
       n_fft: ${general.n_fft}
-  selected: librispeech
+  selected: vivos
 
 model:
   encoder:
@@ -49,7 +49,7 @@ model:
       - transformer
       - conformer
     structure:
-      - conformer
+      - vgg
     hyper:
       general:
         input_dim: 80 # n_fft // 2 + 1
@@ -160,7 +160,7 @@ trainer:
     accumulate_grad_batches: 8
 
 session:
-  train: False
+  train: True
   validate: False
   test: False
   predict:

@@ -157,6 +157,7 @@ class AEDModel(BaseModel):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.is_decoder_transformer = isinstance(decoder, TransformerDecoder)
         self.out = nn.Linear(decoder.output_dim, n_class)
         self.criterion = CrossEntropyLoss(**cfg_model.loss.cross_entropy)
 
@@ -218,6 +219,7 @@ class AEDModel(BaseModel):
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
+
         outputs = self(inputs, input_lengths, targets, target_lengths)
 
         bz, t, _ = outputs.size()
