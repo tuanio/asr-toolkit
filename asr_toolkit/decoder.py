@@ -20,6 +20,7 @@ class LSTMDecoder(nn.Module):
         bidirectional: bool = True,
         sos_id: int = 1,
         eos_id: int = 2,
+        **kwargs
     ):
         super().__init__()
         self.sos_id = sos_id
@@ -83,7 +84,8 @@ class TransformerDecoder(nn.Module):
         batch_first: bool = True,
         norm_first: bool = False,
         blank_id: int = 0,
-        device = None
+        device = None,
+        **kwargs
     ):
         super().__init__()
         self.embedding = nn.Embedding(n_class, d_model)

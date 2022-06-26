@@ -67,6 +67,8 @@ args = parser.parse_args()
 @hydra.main(version_base="1.2", config_path=args.cp, config_name=args.cn)
 def main(cfg: DictConfig):
 
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     # create dataset
     assert cfg.text.selected in cfg.text.all_types, "Dataset not found!"
     if cfg.dataset.selected == "vivos":
@@ -146,7 +148,7 @@ def main(cfg: DictConfig):
         )
     elif cfg_model.decoder.selected == "transformer":
         decoder = TransformerDecoder(
-            **cfg_model.decoder.hyper.transformer, n_class=n_class, blank_id=blank_id
+            **cfg_model.decoder.hyper.transformer, n_class=n_class, blank_id=blank_id, device=device
         )
     else:
         decoder = None
