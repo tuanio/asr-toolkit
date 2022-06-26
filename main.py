@@ -19,7 +19,7 @@ from typing import Tuple
 
 
 class Encoder(nn.Module):
-    def __init__(self, cfg_encoder: DictConfig):
+    def __init__(self, cfg_encoder: DictConfig, blank_id: int = None, device: str = None):
         super().__init__()
         input_dim = cfg_encoder.hyper.general.input_dim
         layers = []
@@ -34,7 +34,7 @@ class Encoder(nn.Module):
                 encoder = LSTMEncoder(**cfg_encoder.hyper.lstm, input_dim=input_dim)
             elif structure == "transformer":
                 encoder = TransformerEncoder(
-                    **cfg_encoder.hyper.transformer, input_dim=input_dim
+                    **cfg_encoder.hyper.transformer, input_dim=input_dim, blank_id=blank_id, device=device
                 )
 
             input_dim = encoder.output_dim
@@ -67,7 +67,7 @@ args = parser.parse_args()
 @hydra.main(version_base="1.2", config_path=args.cp, config_name=args.cn)
 def main(cfg: DictConfig):
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # create dataset
     assert cfg.text.selected in cfg.text.all_types, "Dataset not found!"
@@ -134,7 +134,7 @@ def main(cfg: DictConfig):
     cfg_model = cfg.model
 
     # create encoder and decoder
-    encoder = Encoder(cfg_model.encoder)
+    encoder = Encoder(cfg_model.encoder, blank_id, device)
     assert (
         cfg_model.decoder.selected in cfg_model.decoder.all_types
     ), "Decoder not found!"
@@ -148,7 +148,10 @@ def main(cfg: DictConfig):
         )
     elif cfg_model.decoder.selected == "transformer":
         decoder = TransformerDecoder(
-            **cfg_model.decoder.hyper.transformer, n_class=n_class, blank_id=blank_id, device=device
+            **cfg_model.decoder.hyper.transformer,
+            n_class=n_class,
+            blank_id=blank_id,
+            device=device
         )
     else:
         decoder = None

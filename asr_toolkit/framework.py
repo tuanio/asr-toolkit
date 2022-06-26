@@ -91,7 +91,7 @@ class CTCModel(BaseModel):
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        
+
         targets_ctc = targets[:, 1:-1]
 
         outputs, output_lengths = self(inputs, input_lengths)
@@ -106,7 +106,7 @@ class CTCModel(BaseModel):
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        
+
         targets_ctc = targets[:, 1:-1]
 
         outputs, output_lengths = self(inputs, input_lengths)
@@ -128,7 +128,7 @@ class CTCModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        
+
         targets_ctc = targets[:, 1:-1]
 
         outputs, output_lengths = self(inputs, input_lengths)
