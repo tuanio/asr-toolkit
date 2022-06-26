@@ -8,12 +8,8 @@ from .modules import Linear
 from .feed_forward import FeedForwardModule
 from .attention import MultiHeadedSelfAttentionModule
 from .convolution import ConformerConvModule, ConvSubsampling
-from .modules import (
-    ResidualConnectionModule,
-    Linear,
-    SpecAugment,
-    TransformerPositionalEncoding,
-)
+from .embedding import TransformerPositionalEncoding
+from .modules import ResidualConnectionModule, Linear, SpecAugment
 
 
 class ConformerBlock(nn.Module):

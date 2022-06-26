@@ -63,16 +63,19 @@ class DataModule(pl.LightningDataModule):
 
     def tokenize(self, s):
         s = s.lower()
-        s = ["<s>"] + self.text_process.tokenize(s) + ["<e>"]
+        s = self.text_process.tokenize(s)
         return s
 
     def _collate_fn(self, batch):
         """
         Take feature and input, transform and then padding it
         """
+
         specs = [i[0] for i in batch]
         input_lengths = torch.IntTensor([i.size(0) for i in specs])
         trans = [i[1] for i in batch]
+
+        bs = len(specs)
 
         # batch, time, feature
         specs = torch.nn.utils.rnn.pad_sequence(specs, batch_first=True)
@@ -82,5 +85,10 @@ class DataModule(pl.LightningDataModule):
         trans = torch.nn.utils.rnn.pad_sequence(trans, batch_first=True).to(
             dtype=torch.int
         )
+
+        # concat sos and eos to transcript
+        sos_id = torch.IntTensor([[self.text_process.sos_id]]).repeat(bs, 1)
+        eos_id = torch.IntTensor([[self.text_process.eos_id]]).repeat(bs, 1)
+        trans = torch.cat((sos_id, trans, eos_id), dim=1).to(dtype=torch.int)
 
         return specs, input_lengths, trans, target_lengths

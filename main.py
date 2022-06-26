@@ -146,7 +146,7 @@ def main(cfg: DictConfig):
         )
     elif cfg_model.decoder.selected == "transformer":
         decoder = TransformerDecoder(
-            **cfg_model.decoder.hyper.transformer, n_class=n_class
+            **cfg_model.decoder.hyper.transformer, n_class=n_class, blank_id=blank_id
         )
     else:
         decoder = None

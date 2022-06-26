@@ -91,10 +91,13 @@ class CTCModel(BaseModel):
 
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
+        
+        targets_ctc = targets[:, 1:-1]
+
         outputs, output_lengths = self(inputs, input_lengths)
 
         loss = self.criterion(
-            outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
+            outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
         self.log("train loss", loss)
@@ -103,17 +106,20 @@ class CTCModel(BaseModel):
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
+        
+        targets_ctc = targets[:, 1:-1]
+
         outputs, output_lengths = self(inputs, input_lengths)
 
         loss = self.criterion(
-            outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
+            outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
@@ -122,17 +128,20 @@ class CTCModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
+        
+        targets_ctc = targets[:, 1:-1]
+
         outputs, output_lengths = self(inputs, input_lengths)
 
         loss = self.criterion(
-            outputs.permute(1, 0, 2), targets, output_lengths, target_lengths
+            outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
@@ -157,7 +166,7 @@ class AEDModel(BaseModel):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.is_decoder_transformer = isinstance(decoder, TransformerDecoder)
+        # self.is_decoder_transformer = isinstance(decoder, TransformerDecoder)
         self.out = nn.Linear(decoder.output_dim, n_class)
         self.criterion = CrossEntropyLoss(**cfg_model.loss.cross_entropy)
 
@@ -220,11 +229,14 @@ class AEDModel(BaseModel):
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
-        outputs = self(inputs, input_lengths, targets, target_lengths)
+        targets_in = targets[:, :-1]  # remove eos
+        targets_out = targets[:, 1:]  # remove sos
+
+        outputs = self(inputs, input_lengths, targets_in, target_lengths)
 
         bz, t, _ = outputs.size()
         outputs_edited = outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
         self.log("train loss", loss)
@@ -233,18 +245,22 @@ class AEDModel(BaseModel):
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        outputs = self(inputs, input_lengths, targets, target_lengths)
+
+        targets_in = targets[:, :-1]  # remove eos
+        targets_out = targets[:, 1:]  # remove sos
+
+        outputs = self(inputs, input_lengths, targets_in, target_lengths)
 
         bz, t, _ = outputs.size()
         outputs_edited = outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
@@ -253,18 +269,22 @@ class AEDModel(BaseModel):
 
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
-        outputs = self(inputs, input_lengths, targets, target_lengths)
+
+        targets_in = targets[:, :-1]  # remove eos
+        targets_out = targets[:, 1:]  # remove sos
+
+        outputs = self(inputs, input_lengths, targets_in, target_lengths)
 
         bz, t, _ = outputs.size()
         outputs_edited = outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
         self.log("test loss", loss)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
@@ -580,42 +600,53 @@ class JointCTCAttentionModel(BaseModel):
     def training_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
+        targets_ctc = targets[:, 1:-1]
+        targets_in = targets[:, :-1]
+        targets_out = targets[:, 1:]
+
         encoder_outputs, encoder_output_lengths, decoder_outputs = self(
-            inputs, input_lengths, targets, target_lengths
+            inputs, input_lengths, targets_in, target_lengths
         )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
-            targets,
+            targets_ctc,
             encoder_output_lengths,
             target_lengths,
         )
 
         bz, t, _ = decoder_outputs.size()
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
 
         loss = self.criterion(ctc_loss, ce_loss)
-        return self.text_process.int2text(targets)
+
+        self.log("train loss", loss)
+
+        return loss
 
     def validation_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
+        targets_ctc = targets[:, 1:-1]
+        targets_in = targets[:, :-1]
+        targets_out = targets[:, 1:]
+
         encoder_outputs, encoder_output_lengths, decoder_outputs = self(
-            inputs, input_lengths, targets, target_lengths
+            inputs, input_lengths, targets_in, target_lengths
         )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
-            targets,
+            targets_ctc,
             encoder_output_lengths,
             target_lengths,
         )
 
         bz, t, _ = decoder_outputs.size()
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
 
         loss = self.criterion(ctc_loss, ce_loss)
@@ -624,7 +655,7 @@ class JointCTCAttentionModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)
@@ -634,20 +665,24 @@ class JointCTCAttentionModel(BaseModel):
     def test_step(self, batch: Tensor, batch_idx: int):
         inputs, input_lengths, targets, target_lengths = batch
 
+        targets_ctc = targets[:, 1:-1]
+        targets_in = targets[:, :-1]
+        targets_out = targets[:, 1:]
+
         encoder_outputs, encoder_output_lengths, decoder_outputs = self(
-            inputs, input_lengths, targets, target_lengths
+            inputs, input_lengths, targets_in, target_lengths
         )
 
         ctc_loss = self.ctc_criterion(
             encoder_outputs.permute(1, 0, 2),
-            targets,
+            targets_ctc,
             encoder_output_lengths,
             target_lengths,
         )
 
         bz, t, _ = decoder_outputs.size()
         decoder_outputs_edited = decoder_outputs.view(bz * t, -1)
-        targets_edited = targets.to(dtype=torch.long).view(-1)
+        targets_edited = targets_out.to(dtype=torch.long).view(-1)
         ce_loss = self.ce_criterion(decoder_outputs_edited, targets_edited)
 
         loss = self.criterion(ctc_loss, ce_loss)
@@ -656,7 +691,7 @@ class JointCTCAttentionModel(BaseModel):
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
-                targets, inputs, input_lengths
+                targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
             self.log("test wer", wer)

@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor
 from typing import Tuple
 
-from .modules import TransformerPositionalEncoding
+from .embedding import TransformerPositionalEncoding
 
 
 class LSTMDecoder(nn.Module):
@@ -82,6 +82,7 @@ class TransformerDecoder(nn.Module):
         layer_norm_eps: float = 1e-05,
         batch_first: bool = True,
         norm_first: bool = False,
+        blank_id: int = 0,
     ):
         super().__init__()
         self.embedding = nn.Embedding(n_class, d_model)
@@ -99,11 +100,38 @@ class TransformerDecoder(nn.Module):
         decoder_norm = nn.LayerNorm(d_model, eps=layer_norm_eps)
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers, decoder_norm)
         self.output_dim = d_model
+        self.blank_id = blank_id
 
     def forward(
         self, targets: Tensor, encoder_outputs: Tensor, hidden_state: Tensor = None
     ) -> Tensor:
+
+        tgt_mask, tgt_padding_mask = self.create_mask(targets)
+
         embedded = self.embedding(targets)
         inputs = self.encoding(embedded)
-        outputs = self.decoder(tgt=inputs, memory=encoder_outputs)
+    
+        outputs = self.decoder(
+            tgt=inputs,
+            memory=encoder_outputs,
+            tgt_mask=tgt_mask,
+            tgt_key_padding_mask=tgt_padding_mask
+        )
         return outputs, hidden_state
+
+    def generate_square_subsequent_mask(self, sz):
+        mask = (torch.triu(torch.ones((sz, sz))) == 1)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, float(0.0))
+        )
+        return mask
+
+    def create_mask(self, tgt):
+        tgt_seq_len = tgt.size(1)
+
+        tgt_mask = self.generate_square_subsequent_mask(tgt_seq_len)
+
+        tgt_padding_mask = (tgt == self.blank_id)
+        return tgt_mask, tgt_padding_mask
