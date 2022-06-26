@@ -83,6 +83,7 @@ class TransformerDecoder(nn.Module):
         batch_first: bool = True,
         norm_first: bool = False,
         blank_id: int = 0,
+        device = None
     ):
         super().__init__()
         self.embedding = nn.Embedding(n_class, d_model)
@@ -101,12 +102,14 @@ class TransformerDecoder(nn.Module):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers, decoder_norm)
         self.output_dim = d_model
         self.blank_id = blank_id
+        self.device = device
 
     def forward(
         self, targets: Tensor, encoder_outputs: Tensor, hidden_state: Tensor = None
     ) -> Tensor:
 
         tgt_mask, tgt_padding_mask = self.create_mask(targets)
+        tgt_mask, tgt_padding_mask = tgt_mask.to(self.device), tgt_padding_mask.to(self.device)
 
         embedded = self.embedding(targets)
         inputs = self.encoding(embedded)
