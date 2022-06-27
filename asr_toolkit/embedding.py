@@ -31,7 +31,7 @@ class PositionalEncoding(nn.Module):
 
 
 class TransformerPositionalEncoding(nn.Module):
-    def __init__(self, d_model: int = 512, max_len: int = 10000) -> None:
+    def __init__(self, d_model: int = 512, max_len: int = 20000) -> None:
         super().__init__()
         self.encoding = PositionalEncoding(d_model, max_len)
 
