@@ -1,6 +1,6 @@
 import torch
 from torch import nn, Tensor
-from typing import Tuple
+from typing import Tuple, List
 
 from .embedding import TransformerPositionalEncoding
 
@@ -84,7 +84,7 @@ class TransformerDecoder(nn.Module):
         batch_first: bool = True,
         norm_first: bool = False,
         blank_id: int = 0,
-        device = None,
+        device=None,
         **kwargs
     ):
         super().__init__()
@@ -108,24 +108,28 @@ class TransformerDecoder(nn.Module):
 
     def forward(
         self, targets: Tensor, encoder_outputs: Tensor, hidden_state: Tensor = None
-    ) -> Tensor:
+    ) -> Tuple[Tensor, Tensor]:
 
         tgt_mask, tgt_padding_mask = self.create_mask(targets)
-        tgt_mask, tgt_padding_mask = tgt_mask.to(self.device), tgt_padding_mask.to(self.device)
+        tgt_mask, tgt_padding_mask = (
+            tgt_mask.to(self.device),
+            tgt_padding_mask.to(self.device),
+        )
 
         embedded = self.embedding(targets)
         inputs = self.encoding(embedded)
-    
+
         outputs = self.decoder(
             tgt=inputs,
             memory=encoder_outputs,
             tgt_mask=tgt_mask,
-            tgt_key_padding_mask=tgt_padding_mask
+            tgt_key_padding_mask=tgt_padding_mask,
         )
+
         return outputs, hidden_state
 
-    def generate_square_subsequent_mask(self, sz):
-        mask = (torch.triu(torch.ones((sz, sz))) == 1)
+    def generate_square_subsequent_mask(self, sz: int) -> Tensor:
+        mask = torch.tril(torch.ones((sz, sz))) == 1
         mask = (
             mask.float()
             .masked_fill(mask == 0, float("-inf"))
@@ -133,10 +137,10 @@ class TransformerDecoder(nn.Module):
         )
         return mask
 
-    def create_mask(self, tgt):
-        tgt_seq_len = tgt.size(1)
+    def create_mask(self, tgt: Tensor) -> Tuple[Tensor, Tensor]:
+        seq_len = tgt.size(1)
 
-        tgt_mask = self.generate_square_subsequent_mask(tgt_seq_len)
+        mask = self.generate_square_subsequent_mask(seq_len)
 
-        tgt_padding_mask = (tgt == self.blank_id)
-        return tgt_mask, tgt_padding_mask
+        padding_mask = tgt == self.blank_id
+        return mask, padding_mask

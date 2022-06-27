@@ -376,6 +376,7 @@ class TransformerEncoder(nn.Module):
         layer_norm_eps: float = 1e-05,
         batch_first: bool = True,
         norm_first: bool = False,
+        **kwargs
     ):
         super().__init__()
         self.input_proj = nn.Linear(input_dim, d_model)
