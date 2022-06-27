@@ -402,7 +402,6 @@ class RNNTModel(BaseModel):
                 encoder_output[t].view(-1), decoder_output.view(-1)
             )
             pred_token = step_output.argmax(dim=0)
-            print(pred_token)
             pred_token = int(pred_token.item())
             pred_tokens.append(pred_token)
             decoder_input = step_output.new_tensor([[pred_token]], dtype=torch.long)
@@ -446,7 +445,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        target_lengths_edited = target_lengths + 2
+
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
         self.log("train loss", loss)
 
@@ -466,7 +467,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        target_lengths_edited = target_lengths + 2
+
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
         self.log("test loss", loss)
 
@@ -493,7 +496,9 @@ class RNNTModel(BaseModel):
             inputs, input_lengths, compute_targets, compute_target_lengths
         )
 
-        loss = self.criterion(outputs, targets, output_lengths, target_lengths)
+        target_lengths_edited = target_lengths + 2
+
+        loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
         self.log("test loss", loss)
 

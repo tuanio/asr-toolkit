@@ -28,7 +28,7 @@ dataset:
     - librispeech
   hyper:
     vivos:
-      root: /home/tuanio/workspace/data/vivos
+      root:  D:\NCKH 2022\vivos
       n_fft: ${general.n_fft}
     compose:
       vivos_root: D:\NCKH 2022\vivos
@@ -49,7 +49,7 @@ model:
       - transformer
       - conformer
     structure:
-      - transformer
+      - lstm
     hyper:
       general:
         input_dim: 80 # n_fft // 2 + 1
@@ -86,7 +86,7 @@ model:
       - lstm
       - transformer
       - none
-    selected: transformer
+    selected: lstm
     hyper:
       lstm:
         hidden_size: 32
@@ -113,7 +113,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: aed
+    selected: rnnt
     hyper:
       ctc:
         log_idx: ${general.log_idx}
