@@ -65,7 +65,7 @@ class CharacterBased(TextProcess):
     def int2text(self, s: torch.Tensor) -> str:
         text = ""
         for i in s:
-            if i == self.sos_id:
+            if i in [self.sos_id, self.blank_id]:
                 continue
             if i == self.eos_id:
                 break
