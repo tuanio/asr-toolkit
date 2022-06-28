@@ -49,7 +49,7 @@ model:
       - transformer
       - conformer
     structure:
-      - lstm
+      - transformer
     hyper:
       general:
         input_dim: 80 # n_fft // 2 + 1
@@ -86,7 +86,7 @@ model:
       - lstm
       - transformer
       - none
-    selected: lstm
+    selected: transformer
     hyper:
       lstm:
         hidden_size: 32
@@ -113,7 +113,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: rnnt
+    selected: aed
     hyper:
       ctc:
         log_idx: ${general.log_idx}
@@ -160,8 +160,8 @@ trainer:
     accumulate_grad_batches: 8
 
 session:
-  train: True
-  validate: False
+  train: False
+  validate: True
   test: False
   predict:
     is_pred: True

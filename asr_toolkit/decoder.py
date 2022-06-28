@@ -50,6 +50,7 @@ class LSTMDecoder(nn.Module):
         targets: Tensor,
         encoder_outputs: Tensor = None,
         hidden_state: Tensor = None,
+        **kwargs
     ) -> Tuple[Tensor, Tensor]:
         """
         input
@@ -107,14 +108,22 @@ class TransformerDecoder(nn.Module):
         self.device = device
 
     def forward(
-        self, targets: Tensor, encoder_outputs: Tensor, hidden_state: Tensor = None
+        self,
+        targets: Tensor,
+        encoder_outputs: Tensor,
+        hidden_state: Tensor = None,
+        is_train: bool = False,
+        **kwargs
     ) -> Tuple[Tensor, Tensor]:
 
-        tgt_mask, tgt_padding_mask = self.create_mask(targets)
-        tgt_mask, tgt_padding_mask = (
-            tgt_mask.to(self.device),
-            tgt_padding_mask.to(self.device),
-        )
+        if is_train:
+            tgt_mask, tgt_padding_mask = self.create_mask(targets)
+            tgt_mask, tgt_padding_mask = (
+                tgt_mask.to(self.device),
+                tgt_padding_mask.to(self.device),
+            )
+        else:
+            tgt_mask, tgt_padding_mask = None, None
 
         embedded = self.embedding(targets)
         inputs = self.encoding(embedded)
