@@ -112,18 +112,14 @@ class TransformerDecoder(nn.Module):
         targets: Tensor,
         encoder_outputs: Tensor,
         hidden_state: Tensor = None,
-        is_train: bool = False,
         **kwargs
     ) -> Tuple[Tensor, Tensor]:
 
-        if is_train:
-            tgt_mask, tgt_padding_mask = self.create_mask(targets)
-            tgt_mask, tgt_padding_mask = (
-                tgt_mask.to(self.device),
-                tgt_padding_mask.to(self.device),
-            )
-        else:
-            tgt_mask, tgt_padding_mask = None, None
+        tgt_mask, tgt_padding_mask = self.create_mask(targets)
+        tgt_mask, tgt_padding_mask = (
+            tgt_mask.to(self.device),
+            tgt_padding_mask.to(self.device),
+        )
 
         embedded = self.embedding(targets)
         inputs = self.encoding(embedded)

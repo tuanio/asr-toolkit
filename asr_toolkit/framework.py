@@ -184,7 +184,7 @@ class AEDModel(BaseModel):
     ):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs, hidden_state = self.decoder(
-            targets, encoder_outputs, is_train=True
+            targets, encoder_outputs
         )
         outputs = self.out(decoder_outputs)
         outputs = F.log_softmax(outputs, -1)
@@ -553,7 +553,7 @@ class JointCTCAttentionModel(BaseModel):
     ) -> Tensor:
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
         decoder_outputs, hidden_state = self.decoder(
-            targets, encoder_outputs, hidden_state, is_train=True
+            targets, encoder_outputs, hidden_state
         )
 
         encoder_outputs = self.encoder_outputs(encoder_outputs)
