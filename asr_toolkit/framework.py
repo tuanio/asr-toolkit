@@ -193,7 +193,7 @@ class AEDModel(BaseModel):
     @torch.no_grad()
     def decode(self, encoder_output: Tensor, max_length: int) -> str:
         encoder_output = encoder_output.unsqueeze(0)
-        targets = torch.IntTensor([self.text_process.sos_id]).to(encoder_output.device)
+        targets = torch.IntTensor([self.text_process.sos_id]).to(self.device)
 
         last_token = -1
         hidden_state = None
@@ -391,7 +391,7 @@ class RNNTModel(BaseModel):
             * predicted_log_probs (torch.FloatTensor): Log probability of model predictions.
         """
         pred_tokens, hidden_state = list(), None
-        decoder_input = torch.IntTensor([[self.decoder.sos_id]])
+        decoder_input = torch.IntTensor([[self.decoder.sos_id]]).to(self.device)
 
         for t in range(max_length):
 
@@ -404,7 +404,7 @@ class RNNTModel(BaseModel):
             pred_token = step_output.argmax(dim=0)
             pred_token = int(pred_token.item())
             pred_tokens.append(pred_token)
-            decoder_input = torch.LongTensor([[pred_token]]).to(step_output.device)
+            decoder_input = torch.LongTensor([[pred_token]]).to(self.device)
 
         pred_tokens = torch.LongTensor(pred_tokens)
         return self.text_process.int2text(pred_tokens)
@@ -566,7 +566,7 @@ class JointCTCAttentionModel(BaseModel):
     def decode(self, encoder_output: Tensor, max_length: int) -> str:
         encoder_output = encoder_output.unsqueeze(0)
 
-        targets = torch.IntTensor([self.text_process.sos_id]).to(encoder_output.device)
+        targets = torch.IntTensor([self.text_process.sos_id]).to(self.device)
 
         last_token = -1
         hidden_state = None

@@ -3,11 +3,11 @@ hydra:
     dir: ./output
 
 general:
-  batch_size: 8
+  batch_size: 16
   n_fft: 159 # -> output 80 filterbank for spectrogram
   lr: 0.001
   log_idx: 100
-  epochs: 500
+  epochs: 100
   
 text:
   all_types:
@@ -52,9 +52,9 @@ model:
       general:
         input_dim: 80 # n_fft // 2 + 1
       conformer:
-        encoder_dim: 8 # 144
-        num_encoder_layers: 1 # 8
-        num_attention_heads: 1
+        encoder_dim: 144 # 144
+        num_encoder_layers: 16 # 8
+        num_attention_heads: 4
         freq_masks: 2
         time_masks: 10
         freq_width: 27
@@ -84,10 +84,10 @@ model:
       - lstm
       - transformer
       - none
-    selected: none
+    selected: lstm
     hyper:
       lstm:
-        hidden_size: 32
+        hidden_size: 320
         num_layers: 1
         use_attention: False
         num_attention_heads: 1
@@ -111,7 +111,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: ctc
+    selected: rnnt
     hyper:
       ctc:
         log_idx: ${general.log_idx}
@@ -151,15 +151,13 @@ trainer:
     save_dir: tb_logs
     name: model_logs
   lr_monitor:
-    logging_interval: step
+    logging_interval: 
   hyper:
     max_epochs: ${general.epochs}
     accelerator: cuda # auto
     accumulate_grad_batches: 4
     devices: -1
     precision: 16
-    amp_backend: apex
-    amp_level: 03
 
 session:
   train: True
