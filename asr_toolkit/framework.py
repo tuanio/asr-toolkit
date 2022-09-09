@@ -102,7 +102,7 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -117,14 +117,14 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -139,14 +139,14 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -241,7 +241,7 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -258,14 +258,14 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -282,14 +282,14 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -449,7 +449,7 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -471,14 +471,14 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -500,14 +500,14 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -627,7 +627,7 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -656,14 +656,14 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -692,13 +692,13 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss

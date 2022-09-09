@@ -151,7 +151,7 @@ trainer:
     logging_interval: step
   hyper:
     max_epochs: ${general.epochs}
-    accelerator: auto
+    accelerator: dp # auto
     accumulate_grad_batches: 4
     devices: -1
 
