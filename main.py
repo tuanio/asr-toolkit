@@ -198,7 +198,7 @@ def main(cfg: DictConfig):
     tb_logger = pl.loggers.tensorboard.TensorBoardLogger(**cfg.trainer.tb_logger)
     print("Done setup tb logger!")
 
-    lr_monitor = pl.callbacks.LearningRateMonitor(**cfg.trainer.lr_monitor)
+    lr_monitor = pl.callbacks.LearningRateMonitor()
     print("Done setup lr monitor!")
 
     trainer = pl.Trainer(logger=tb_logger, callbacks=[lr_monitor], **cfg.trainer.hyper)

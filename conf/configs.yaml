@@ -150,8 +150,6 @@ trainer:
   tb_logger:
     save_dir: tb_logs
     name: model_logs
-  lr_monitor:
-    logging_interval: 
   hyper:
     max_epochs: ${general.epochs}
     accelerator: cuda # auto
