@@ -185,9 +185,7 @@ class AEDModel(BaseModel):
         target_lengths: Tensor,
     ):
         encoder_outputs, encoder_output_lengths = self.encoder(inputs, input_lengths)
-        decoder_outputs, hidden_state = self.decoder(
-            targets, encoder_outputs
-        )
+        decoder_outputs, hidden_state = self.decoder(targets, encoder_outputs)
         outputs = self.out(decoder_outputs)
         outputs = F.log_softmax(outputs, -1)
         return outputs

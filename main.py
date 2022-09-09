@@ -19,7 +19,9 @@ from typing import Tuple
 
 
 class Encoder(nn.Module):
-    def __init__(self, cfg_encoder: DictConfig, blank_id: int = None, device: str = None):
+    def __init__(
+        self, cfg_encoder: DictConfig, blank_id: int = None, device: str = None
+    ):
         super().__init__()
         input_dim = cfg_encoder.hyper.general.input_dim
         layers = []
@@ -34,7 +36,10 @@ class Encoder(nn.Module):
                 encoder = LSTMEncoder(**cfg_encoder.hyper.lstm, input_dim=input_dim)
             elif structure == "transformer":
                 encoder = TransformerEncoder(
-                    **cfg_encoder.hyper.transformer, input_dim=input_dim, blank_id=blank_id, device=device
+                    **cfg_encoder.hyper.transformer,
+                    input_dim=input_dim,
+                    blank_id=blank_id,
+                    device=device
                 )
 
             input_dim = encoder.output_dim
@@ -124,7 +129,13 @@ def main(cfg: DictConfig):
 
     # create data module
     dm = DataModule(
-        train_set, val_set, test_set, predict_set, text_process, cfg.general.batch_size
+        train_set,
+        val_set,
+        test_set,
+        predict_set,
+        text_process,
+        cfg.general.batch_size,
+        cfg.dataset.num_workers,
     )
 
     steps_per_epoch = len(dm.train_dataloader())
