@@ -34,7 +34,7 @@ dataset:
       vlsp_root: data/vlsp2020_train_set_02
       n_fft: ${general.n_fft}
   selected: compose
-  num_workers: 12
+  num_workers: 32
 
 model:
   encoder:
