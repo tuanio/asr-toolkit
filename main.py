@@ -135,7 +135,7 @@ def main(cfg: DictConfig):
         predict_set,
         text_process,
         cfg.general.batch_size,
-        cfg.dataset.num_workers,
+        **cfg.datamodule,
     )
 
     steps_per_epoch = len(dm.train_dataloader())
