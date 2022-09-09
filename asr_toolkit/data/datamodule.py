@@ -38,6 +38,7 @@ class DataModule(pl.LightningDataModule):
             shuffle=True,
             pin_memory=True,
             num_workers=self.num_workers,
+            persistent_workers=True
         )
 
     def val_dataloader(self):
@@ -47,6 +48,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
+            persistent_workers=True
         )
 
     def test_dataloader(self):
@@ -56,6 +58,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
+            persistent_workers=True
         )
 
     def predict_dataloader(self):
@@ -65,6 +68,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
+            persistent_workers=True
         )
 
     def tokenize(self, s):
