@@ -37,7 +37,7 @@ dataset:
 
 datamodule:
   persistent_workers: False
-  num_workers: 32
+  num_workers: 0
 
 model:
   encoder:
@@ -52,8 +52,8 @@ model:
       general:
         input_dim: 80 # n_fft // 2 + 1
       conformer:
-        encoder_dim: 144
-        num_encoder_layers: 8
+        encoder_dim: 8 # 144
+        num_encoder_layers: 1 # 8
         num_attention_heads: 1
         freq_masks: 2
         time_masks: 10
@@ -154,7 +154,7 @@ trainer:
     logging_interval: step
   hyper:
     max_epochs: ${general.epochs}
-    accelerator: dp # auto
+    accelerator: cuda # auto
     accumulate_grad_batches: 4
     devices: -1
 

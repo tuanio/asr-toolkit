@@ -39,7 +39,7 @@ class Encoder(nn.Module):
                     **cfg_encoder.hyper.transformer,
                     input_dim=input_dim,
                     blank_id=blank_id,
-                    device=device
+                    device=device,
                 )
 
             input_dim = encoder.output_dim
@@ -155,14 +155,14 @@ def main(cfg: DictConfig):
             n_class=n_class,
             encoder_output_dim=encoder.output_dim,
             sos_id=text_process.sos_id,
-            eos_id=text_process.eos_id
+            eos_id=text_process.eos_id,
         )
     elif cfg_model.decoder.selected == "transformer":
         decoder = TransformerDecoder(
             **cfg_model.decoder.hyper.transformer,
             n_class=n_class,
             blank_id=blank_id,
-            device=device
+            device=device,
         )
     else:
         decoder = None

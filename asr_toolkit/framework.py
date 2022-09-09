@@ -23,7 +23,7 @@ class BaseModel(pl.LightningModule):
             "interval": "step",  # or 'epoch'
             "frequency": 1,
         }
-        return [optimizer], [lr_scheduler]
+        return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
 
     def get_wer(
         self, targets: Tensor, inputs: Tensor, input_lengths: Tensor
