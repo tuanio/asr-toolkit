@@ -20,6 +20,8 @@ class BaseModel(pl.LightningModule):
                 optimizer, **self.cfg_model.lr_scheduler.one_cycle_lr
             ),
             "name": "lr_scheduler_logger",
+            "interval": "step",  # or 'epoch'
+            "frequency": 1,
         }
         return [optimizer], [lr_scheduler]
 
@@ -100,7 +102,7 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -115,14 +117,14 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -137,14 +139,14 @@ class CTCModel(BaseModel):
             outputs.permute(1, 0, 2), targets_ctc, output_lengths, target_lengths
         )
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_ctc, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -193,7 +195,7 @@ class AEDModel(BaseModel):
     @torch.no_grad()
     def decode(self, encoder_output: Tensor, max_length: int) -> str:
         encoder_output = encoder_output.unsqueeze(0)
-        targets = encoder_output.new_tensor([self.text_process.sos_id], dtype=torch.int)
+        targets = torch.IntTensor([self.text_process.sos_id]).to(encoder_output.device)
 
         last_token = -1
         hidden_state = None
@@ -241,7 +243,7 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -258,14 +260,14 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -282,14 +284,14 @@ class AEDModel(BaseModel):
         targets_edited = targets_out.to(dtype=torch.long).view(-1)
         loss = self.criterion(outputs_edited, targets_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -391,9 +393,7 @@ class RNNTModel(BaseModel):
             * predicted_log_probs (torch.FloatTensor): Log probability of model predictions.
         """
         pred_tokens, hidden_state = list(), None
-        decoder_input = encoder_output.new_tensor(
-            [[self.decoder.sos_id]], dtype=torch.int
-        )
+        decoder_input = torch.IntTensor([[self.decoder.sos_id]])
 
         for t in range(max_length):
 
@@ -406,7 +406,7 @@ class RNNTModel(BaseModel):
             pred_token = step_output.argmax(dim=0)
             pred_token = int(pred_token.item())
             pred_tokens.append(pred_token)
-            decoder_input = step_output.new_tensor([[pred_token]], dtype=torch.long)
+            decoder_input = torch.LongTensor([[pred_token]]).to(step_output.device)
 
         pred_tokens = torch.LongTensor(pred_tokens)
         return self.text_process.int2text(pred_tokens)
@@ -451,7 +451,7 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -473,14 +473,14 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -502,14 +502,14 @@ class RNNTModel(BaseModel):
 
         loss = self.criterion(outputs, targets, output_lengths, target_lengths_edited)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -568,7 +568,7 @@ class JointCTCAttentionModel(BaseModel):
     def decode(self, encoder_output: Tensor, max_length: int) -> str:
         encoder_output = encoder_output.unsqueeze(0)
 
-        targets = encoder_output.new_tensor([self.text_process.sos_id], dtype=torch.int)
+        targets = torch.IntTensor([self.text_process.sos_id]).to(encoder_output.device)
 
         last_token = -1
         hidden_state = None
@@ -629,7 +629,7 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("train loss", loss)
+        self.log("train loss", loss, sync_dist=True)
 
         return loss
 
@@ -658,14 +658,14 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss
 
@@ -694,13 +694,13 @@ class JointCTCAttentionModel(BaseModel):
 
         loss = self.criterion(ctc_loss, ce_loss)
 
-        self.log("test loss", loss)
+        self.log("test loss", loss, sync_dist=True)
 
         if batch_idx % self.log_idx == 0:
             label_sequences, predict_sequences, wer = self.get_wer(
                 targets_out, inputs, input_lengths
             )
             self.log_output(predict_sequences[0], label_sequences[0], wer)
-            self.log("test wer", wer)
+            self.log("test wer", wer, sync_dist=True)
 
         return loss

@@ -1,14 +1,14 @@
 hydra:
   run:
-    dir: ./outputs
+    dir: ./output
 
 general:
-  batch_size: 4
+  batch_size: 8
   n_fft: 159 # -> output 80 filterbank for spectrogram
   lr: 0.001
   log_idx: 100
-  epochs: 10
-
+  epochs: 500
+  
 text:
   all_types:
     - char
@@ -25,21 +25,15 @@ dataset:
   all_types:
     - vivos
     - compose
-    - librispeech
   hyper:
     vivos:
-      root:  D:\NCKH 2022\vivos
+      root: data/vivos-dataset/vivos
       n_fft: ${general.n_fft}
     compose:
-      vivos_root: D:\NCKH 2022\vivos
-      vlsp_root: ''
-      fpt_root: ''
+      vivos_root: data/vivos
+      vlsp_root: data/vlsp2020_train_set_02
       n_fft: ${general.n_fft}
-    librispeech:
-      clean_path: /home/tuanio/workspace/LibriSpeech/
-      other_path: /home/tuanio/workspace/LibriSpeech/
-      n_fft: ${general.n_fft}
-  selected: vivos
+  selected: compose
 
 model:
   encoder:
@@ -49,13 +43,13 @@ model:
       - transformer
       - conformer
     structure:
-      - transformer
+      - conformer
     hyper:
       general:
         input_dim: 80 # n_fft // 2 + 1
       conformer:
-        encoder_dim: 16
-        num_encoder_layers: 1
+        encoder_dim: 144
+        num_encoder_layers: 8
         num_attention_heads: 1
         freq_masks: 2
         time_masks: 10
@@ -71,7 +65,7 @@ model:
         batch_first: True 
         dropout: 0.1
         bidirectional: True
-      transformer:
+      transformer: 
         d_model:  ${model.encoder.hyper.conformer.encoder_dim}
         nhead: 1
         num_layers: 1
@@ -86,7 +80,7 @@ model:
       - lstm
       - transformer
       - none
-    selected: transformer
+    selected: none
     hyper:
       lstm:
         hidden_size: 32
@@ -113,7 +107,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: aed
+    selected: ctc
     hyper:
       ctc:
         log_idx: ${general.log_idx}
@@ -157,16 +151,17 @@ trainer:
   hyper:
     max_epochs: ${general.epochs}
     accelerator: auto
-    accumulate_grad_batches: 8
+    accumulate_grad_batches: 4
+    devices: -1
 
 session:
-  train: False
-  validate: True
+  train: True
+  validate: False
   test: False
   predict:
-    is_pred: True
+    is_pred: False
     audio_path: /home/tuanio/workspace/LibriSpeech/test-other/3331/159609/3331-159609-0000.flac
 
 ckpt:
   use_ckpt: False
-  ckpt_path: /home/tuanio/workspace/ckpt_model/epoch=9-step=8920.ckpt
+  ckpt_path: ../input/checkpoint/epoch145-step310688.ckpt

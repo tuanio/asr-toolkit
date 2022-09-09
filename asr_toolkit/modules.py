@@ -79,7 +79,7 @@ class SpecAugment(nn.Module):
 
                 input_spec[idx, :, y_left : y_left + w] = self.mask_value
 
-        return input_spec
+        return input_spec, length
 
 
 class AdditiveAttention(nn.Module):
