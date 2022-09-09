@@ -40,7 +40,7 @@ class DataModule(pl.LightningDataModule):
             shuffle=True,
             pin_memory=True,
             num_workers=self.num_workers,
-            persistent_workers=persistent_workers
+            persistent_workers=self.persistent_workers
         )
 
     def val_dataloader(self):
@@ -50,7 +50,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
-            persistent_workers=persistent_workers
+            persistent_workers=self.persistent_workers
         )
 
     def test_dataloader(self):
@@ -60,7 +60,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
-            persistent_workers=persistent_workers
+            persistent_workers=self.persistent_workers
         )
 
     def predict_dataloader(self):
@@ -70,7 +70,7 @@ class DataModule(pl.LightningDataModule):
             collate_fn=self._collate_fn,
             pin_memory=True,
             num_workers=self.num_workers,
-            persistent_workers=persistent_workers
+            persistent_workers=self.persistent_workers
         )
 
     def tokenize(self, s):
