@@ -3,7 +3,7 @@ hydra:
     dir: ./output
 
 general:
-  batch_size: 16
+  batch_size: 8
   n_fft: 159 # -> output 80 filterbank for spectrogram
   lr: 0.001
   log_idx: 100
@@ -27,11 +27,11 @@ dataset:
     - compose
   hyper:
     vivos:
-      root: data/vivos-dataset/vivos
+      root: ../data/vivos/vivos
       n_fft: ${general.n_fft}
     compose:
-      vivos_root: data/vivos
-      vlsp_root: data/vlsp2020_train_set_02
+      vivos_root: ../data/vivos
+      vlsp_root: ../data/vlsp
       n_fft: ${general.n_fft}
   selected: compose
 
@@ -84,7 +84,7 @@ model:
       - lstm
       - transformer
       - none
-    selected: lstm
+    selected: none
     hyper:
       lstm:
         hidden_size: 320
@@ -111,7 +111,7 @@ model:
       - aed
       - rnnt
       - joint_ctc_attention
-    selected: rnnt
+    selected: ctc
     hyper:
       ctc:
         log_idx: ${general.log_idx}
@@ -152,19 +152,20 @@ trainer:
     name: model_logs
   hyper:
     max_epochs: ${general.epochs}
-    accelerator: cuda # auto
+    accelerator: auto # auto
     accumulate_grad_batches: 4
     devices: -1
+    gpus: -1
     precision: 16
 
 session:
   train: True
   validate: False
-  test: False
+  test: True
   predict:
     is_pred: False
-    audio_path: /home/tuanio/workspace/LibriSpeech/test-other/3331/159609/3331-159609-0000.flac
+    audio_path: ...
 
 ckpt:
   use_ckpt: False
-  ckpt_path: ../input/checkpoint/epoch145-step310688.ckpt
+  ckpt_path: ...

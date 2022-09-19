@@ -25,3 +25,7 @@ set HYDRA_FULL_ERROR=1
 ## Training Template
 - **Conformer-Transformer-AED Vivos (WER: 10%):** https://colab.research.google.com/drive/10dpTTy5huj7SjLst2Jj_Iff2aXLYJoBS?usp=sharing
 - **Conformer-Transformer-AED LibriSpeech (WER 0%):** https://www.kaggle.com/code/tuannguyenvananh/conformer-transformer-aed-librispeech
+
+## Install package
+
+conda create -n train_env -c pytorch-nightly -c nvidia -c pytorch -c conda-forge python=3.7 pytorch torchaudio cudatoolkit pandas numpy ipykernel
