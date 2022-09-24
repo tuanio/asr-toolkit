@@ -74,7 +74,8 @@ class DataModule(pl.LightningDataModule):
         )
 
     def tokenize(self, s):
-        s = s.lower()
+        if isinstance(s, str):
+            s = s.lower()
         s = self.text_process.tokenize(s)
         return s
 
