@@ -1,6 +1,11 @@
 import torch
 from torch import nn, Tensor
-from asr_toolkit.data.dataset import VivosDataset, ComposeDataset, LibriSpeechDataset, TimitDataset
+from asr_toolkit.data.dataset import (
+    VivosDataset,
+    ComposeDataset,
+    LibriSpeechDataset,
+    TimitDataset,
+)
 from asr_toolkit.data.datamodule import DataModule
 from asr_toolkit.text import CharacterBased, BPEBased, PhonemeBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
@@ -86,11 +91,11 @@ def main(cfg: DictConfig):
         test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
-    elif cfg.dataset.selected == 'timit':
+    elif cfg.dataset.selected == "timit":
         train_set = TimitDataset(**cfg.dataset.hyper.timit, is_test=False)
         test_set = TimitDataset(**cfg.dataset.hyper.timit, is_test=True)
         val_set = test_set
-        predict_set = predict_set
+        predict_set = test_set
     elif cfg.dataset.selected == "librispeech":
         train_set = LibriSpeechDataset(
             **cfg.dataset.hyper.librispeech, subset="test-other"

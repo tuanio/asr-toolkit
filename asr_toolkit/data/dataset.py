@@ -409,7 +409,12 @@ class ComposeDataset(Dataset):
 
 class TimitDataset(Dataset):
     def __init__(
-        self, data_root: str, csv_path: str, n_fft: int = 159, is_test: bool = False
+        self,
+        data_root: str,
+        csv_path: str,
+        n_fft: int = 159,
+        is_test: bool = False,
+        **kwargs,
     ):
         super().__init__()
         df = pd.read_csv(csv_path, index_col=0)
