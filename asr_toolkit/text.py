@@ -219,5 +219,5 @@ class PhonemeBased(TextProcess):
                 continue
             if i == self.eos_id:
                 break
-            text += self.vocabs[i]
+            text += " " + self.vocabs[i]
         return text
