@@ -200,7 +200,7 @@ class PhonemeBased(TextProcess):
             "p",
         ]
         self.n_class = len(self.vocabs)
-        self.label_vocabs = dict(zip(self.vocabs, self.n_class))
+        self.label_vocabs = dict(zip(self.vocabs, range(self.n_class)))
 
         self.sos_id = 1
         self.eos_id = 2
