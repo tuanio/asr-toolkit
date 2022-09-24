@@ -13,6 +13,10 @@ class TextProcess(ABC):
     def int2text(self, data):
         pass
 
+    @abstractmethod
+    def tokenize(self, data):
+        pass
+
     def __init__(self):
         ...
 
@@ -124,3 +128,96 @@ class BPEBased(TextProcess):
     def load(self, in_path):
         self.encoder = self.encoder.load(in_path)
         self.blank_id = self.encoder.word_vocab[self.pad]
+
+
+class PhonemeBased(TextProcess):
+    def __init__(self, **kwargs):
+        """label for timit"""
+        super().__init__()
+        self.vocabs = [
+            "<p>",
+            "<s>",
+            "<e>",
+            "dcl",
+            "l",
+            "ah",
+            "d",
+            "iy",
+            "q",
+            "axr",
+            "ax",
+            "y",
+            "ax-h",
+            "pcl",
+            "kcl",
+            "uw",
+            "ux",
+            "t",
+            "dx",
+            "zh",
+            "hh",
+            "em",
+            "er",
+            "jh",
+            "dh",
+            "ix",
+            "b",
+            "s",
+            "aa",
+            "oy",
+            "nx",
+            "m",
+            "v",
+            "ow",
+            "ae",
+            "epi",
+            "w",
+            "bcl",
+            "ng",
+            "tcl",
+            "eng",
+            "g",
+            "sh",
+            "k",
+            "uh",
+            "aw",
+            "r",
+            "th",
+            "gcl",
+            "n",
+            "z",
+            "hv",
+            "el",
+            "ih",
+            "pau",
+            "ch",
+            "en",
+            "ao",
+            "ey",
+            "ay",
+            "eh",
+            "f",
+            "p",
+        ]
+        self.n_class = len(self.vocabs)
+        self.label_vocabs = dict(zip(self.vocab, self.n_class))
+
+        self.sos_id = 1
+        self.eos_id = 2
+        self.blank_id = 0
+
+    def tokenize(self, data):
+        return data
+
+    def text2int(self, s: str) -> torch.Tensor:
+        return torch.Tensor([self.label_vocabs[i] for i in s])
+
+    def int2text(self, s: torch.Tensor) -> str:
+        text = ""
+        for i in s:
+            if i in [self.sos_id, self.blank_id]:
+                continue
+            if i == self.eos_id:
+                break
+            text += self.vocabs[i]
+        return text

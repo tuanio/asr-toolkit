@@ -28,4 +28,4 @@ set HYDRA_FULL_ERROR=1
 
 ## Install package
 
-conda create -n train_env -c pytorch-nightly -c nvidia -c pytorch -c conda-forge python=3.7 pytorch torchaudio cudatoolkit pandas numpy ipykernel
+conda create -n train_env -c pytorch-nightly -c nvidia -c pytorch -c conda-forge python=3.7 pytorch torchaudio cudatoolkit pandas numpy 

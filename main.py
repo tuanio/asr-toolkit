@@ -1,8 +1,8 @@
 import torch
 from torch import nn, Tensor
-from asr_toolkit.data.dataset import VivosDataset, ComposeDataset, LibriSpeechDataset
+from asr_toolkit.data.dataset import VivosDataset, ComposeDataset, LibriSpeechDataset, TimitDataset
 from asr_toolkit.data.datamodule import DataModule
-from asr_toolkit.text import CharacterBased, BPEBased
+from asr_toolkit.text import CharacterBased, BPEBased, PhonemeBased
 from asr_toolkit.encoder import Conformer, VGGExtractor, LSTMEncoder, TransformerEncoder
 from asr_toolkit.decoder import LSTMDecoder, TransformerDecoder
 from asr_toolkit.framework import CTCModel, AEDModel, RNNTModel, JointCTCAttentionModel
@@ -86,6 +86,11 @@ def main(cfg: DictConfig):
         test_set = ComposeDataset(**cfg.dataset.hyper.compose, vivos_subset="test")
         val_set = test_set
         predict_set = test_set
+    elif cfg.dataset.selected == 'timit':
+        train_set = TimitDataset(**cfg.dataset.hyper.timit, is_test=False)
+        test_set = TimitDataset(**cfg.dataset.hyper.timit, is_test=True)
+        val_set = test_set
+        predict_set = predict_set
     elif cfg.dataset.selected == "librispeech":
         train_set = LibriSpeechDataset(
             **cfg.dataset.hyper.librispeech, subset="test-other"
@@ -119,6 +124,9 @@ def main(cfg: DictConfig):
 
         print("Fitting text corpus to BPE...")
         text_process.fit(text_corpus)
+    elif cfg.text.selected == "phoneme":
+        text_process = PhonemeBased(**cfg.text.hyper.phoneme)
+
     n_class = text_process.n_class
     blank_id = text_process.blank_id
 

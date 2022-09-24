@@ -407,21 +407,27 @@ class ComposeDataset(Dataset):
         return specs, trans
 
 
-if __name__ == "__main__":
-    print("run")
-    FPTPath = r"D:\2022\Python\ARS\data\FPTOpenData"
-    YoutubePath = r"D:\2022\Python\ARS\data\youtube2text"
-    PodcastPath = r"D:\2022\Python\ARS\data\vietnamese_podcast"
-    NLPRecordPath = r"D:\2022\Python\ARS\data\nlp_speech_record"
-    VivosPath = r"D:\2022\Python\ARS\data\vivos"
-    VlspPath = r"D:\2022\Python\ARS\data\vlsp2020_train_set_02"
-    Compose = ComposeDataset(
-        vivos_root=VivosPath,
-        vlsp_root=VlspPath,
-        podcasts_root=PodcastPath,
-        fpt_root=FPTPath,
-        self_record_root=NLPRecordPath,
-        youtube_root=YoutubePath,
-    )
-    print(len(Compose))
-    print(Compose.walker[:10])
+class TimitDataset(Dataset):
+    def __init__(
+        self, data_root: str, csv_path: str, n_fft: int = 159, is_test: bool = False
+    ):
+        super().__init__()
+        df = pd.read_csv(csv_path, index_col=0)
+        df = df[df.is_test == is_test].drop("is_test", axis=1)
+        df.path = df.path.apply(lambda x: data_root + os.sep + x)
+        df.trans = df.trans.str.split("|")
+
+        self.walker = df.to_dict("records")
+        self.feature_transform = torchaudio.transforms.Spectrogram(n_fft=n_fft)
+
+    def __len__(self):
+        return len(self.walker)
+
+    def __getitem__(self, idx):
+        item = self.walker[idx]
+        trans = item["trans"]
+        wave, sr = torchaudio.load(item["path"])
+        specs = self.feature_transform(wave)
+        specs = specs.permute(0, 2, 1)
+        specs = specs.squeeze()
+        return specs, trans

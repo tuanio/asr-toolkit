@@ -13,18 +13,22 @@ text:
   all_types:
     - char
     - bpe
+    - phoneme
   hyper:
     char:
       lang: vi
     bpe:
       vocab_size: 1000
       pct_bpe: 1
-  selected: char
+  phoneme:
+    stuff: None
+  selected: phoneme
 
 dataset:
   all_types:
     - vivos
     - compose
+    - timit
   hyper:
     vivos:
       root: ../data/vivos/vivos
@@ -33,7 +37,11 @@ dataset:
       vivos_root: ../data/vivos
       vlsp_root: ../data/vlsp
       n_fft: ${general.n_fft}
-  selected: compose
+    timit:
+      data_root: ...
+      csv_path: ...
+      n_fft: ${general.n_fft}
+  selected: timit
 
 datamodule:
   persistent_workers: False
