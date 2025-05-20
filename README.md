@@ -196,8 +196,7 @@ publisher="Springer Nature Singapore",
 address="Singapore",
 pages="723--730",
 abstract="Research on speech recognition has existed for a long time, but there is very little research on applying deep learning to Vietnamese language speech recognition. In this paper, we solve the Vietnamese speech recognition problem by deep learning speech recognition frameworks including CTC and Joint CTC/Attention combined with encoder architectures Conformer. Experimental results achieved moderate accuracy using over 115 h of training data of VLSP and Vivos. Compared with the other models, the training results show that the Conformer model trained on CTC achieved good results with a WER value of 20{\%}. Training on big data gives remarkable results and is the basis for us to continue improving the model and increasing accuracy in the future.",
-isbn="978-981-19-8069-5",
-doi="10.1007/978-981-19-8069-5_53"
+isbn="978-981-19-8069-5"
 }
 ```
 
