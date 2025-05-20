@@ -1,4 +1,4 @@
-# ASR-Toolkit
+# End-to-End ASR-Toolkit
 
 [![Stars](https://img.shields.io/github/stars/tuanio/asr-toolkit?style=social)](https://github.com/tuanio/asr-toolkit/stargazers)
 [![Fork](https://img.shields.io/github/forks/tuanio/asr-toolkit?style=social)](https://github.com/tuanio/asr-toolkit/network/members)
@@ -119,13 +119,60 @@ Ready-to-use Colab/Kaggle notebooks for different datasets:
 
 Results from the paper "[A Novel Approach for Vietnamese Speech Recognition Using Conformer](https://doi.org/10.1007/978-981-19-8069-5_53)":
 
-| Model | Dataset | WER (%) | CER (%) |
-|-------|---------|---------|---------|
-| Conformer + CTC | VLSP+Vivos | 20.0 | - |
-| Conformer + Transformer | LibriSpeech test-clean | 5.2 | 1.7 |
-| Conformer + Transformer | Vivos test | 7.1 | 2.4 |
+### Model Information
 
-The research demonstrated that the Conformer model trained with CTC achieved good results with Vietnamese speech recognition, establishing a foundation for future improvements.
+| Model | Parameters | Minutes/Epoch | No. Epochs |
+|-------|------------|---------------|------------|
+| Conformer - CTC | 4.7M | 36 | 90 |
+| Conformer - Transformer - Joint CTC/Attention | 4.9M | 41 | 55 |
+
+### Comparison with Other Vietnamese ASR Systems
+
+| Model | Test Dataset | WER (%) |
+|-------|-------------|---------|
+| Conformer - CTC (ours) | Vivos | 20.0 |
+| Conformer - Transformer - Joint CTC/Attention (ours) | Vivos | 44.0 |
+| --- | --- | --- |
+| Wave2vec 2.0 [2] | Vivos | 6.15 |
+| Google [3] | News | 22.41 |
+| Data Augmentation [4] | Realistic voice | 10.3 |
+| TDNN + LSTM (E2E Model) [1] | VLSP2018 + FPT | 9.71 |
+| Conformer + Transformer | LibriSpeech test-clean | 5.2 |
+| Conformer + Transformer | Vivos test | 7.1 |
+
+### Sample Predictions (Vietnamese)
+
+Here are sample predictions from the models compared to ground truth:
+
+**Sample 1:** "and when I saw that I was still steadfast in replying"
+
+| Model | Ground Truth | Prediction |
+|-------|-------------|------------|
+| Conformer - CTC | và khi thấy tôi vẫn kiên định trả lời trớt quớt | và khi thấy tôi vẫn kiên định trả lời trớt quốc |
+| Conformer - Transformer - Joint CTC/Attention | và khi thấy tôi vẫn kiên định trả lời trớt quớt | và khi thấy tôi vẫn kiên định trả lời trớt quốc |
+
+**Sample 2:** "the brother was then allowed to bid to build the canal but did not proceed"
+
+| Model | Ground Truth | Prediction |
+|-------|-------------|------------|
+| Conformer - CTC | người anh sau đó được phép thầu xây kênh này nhưng không tiến hành | người anh sau đó được phép thầu say kên này nhưng không tê hàn |
+| Conformer - Transformer - Joint CTC/Attention | người anh sau đó được phép thầu xây kênh này nhưng không tiến hành | người anh sau đó được phép phiếp thầu phay kên này nhưng không tiếng hành |
+
+**Sample 3:** "I am afraid of losing him, but I feel insulted"
+
+| Model | Ground Truth | Prediction |
+|-------|-------------|------------|
+| Conformer - CTC | em sợ mất anh ấy nhưng lại cảm thấy mình bị xúc phạm | em sớm mận anh ấy nhưng là cảm thá mình bị xúc phạm |
+| Conformer - Transformer - Joint CTC/Attention | em sợ mất anh ấy nhưng lại cảm thấy mình bị xúc phạm | em sớ mất anh ấy nhưng là cảm thái mình bị xúc phải |
+
+**Sample 4:** "can heal without leaving a scar"
+
+| Model | Ground Truth | Prediction |
+|-------|-------------|------------|
+| Conformer - CTC | có thể lành lặn mà không để lại vết sẹo | có thể lảng lạng mà không bể lại dết sẹo |
+| Conformer - Transformer - Joint CTC/Attention | có thể lành lặn mà không để lại vết sẹo | có thể lảng lặng mà không bệt sẹo |
+
+The research demonstrated that the Conformer model trained with CTC achieved reasonable results with Vietnamese speech recognition (20% WER), establishing a foundation for future improvements.
 
 ## 📝 Citations
 
@@ -154,21 +201,19 @@ doi="10.1007/978-981-19-8069-5_53"
 }
 ```
 
-You can also cite the toolkit itself:
+## 📚 References
 
-```bibtex
-@software{asr_toolkit,
-  author = {Nguyen, Tuan},
-  title = {ASR-Toolkit: End-to-End Speech Recognition with Hydra and PyTorch Lightning},
-  url = {https://github.com/tuanio/asr-toolkit},
-  year = {2023},
-}
-```
+1. Nguyen, V. H.: An End-to-End Model for Vietnamese Speech Recognition. In: 2019 IEEE-RIVF International Conference on Computing and Communication Technologies (RIVF), 2019, pp. 1-6, (2019). https://doi.org/10.1109/RIVF.2019.8713758
 
-## 🔗 References
+2. Nguyen, B.: Vietnamese end-to-end speech recognition using wav2vec 2.0. (2021). https://doi.org/10.5281/zenodo.5356039
 
-- [Conformer: Convolution-augmented Transformer for Speech Recognition](https://arxiv.org/abs/2005.08100)
-- [Implementation reference](https://github.com/sooftware/conformer)
+3. Thanh, N., T., M., Dung, P., X., Hay, N., N., Bich, L., N., Quy, Đ., X.: Đánh giá các hệ thống nhận dạng giọng nói tiếng Việt (Vais, Viettel, Zalo, Fpt và Google) trong bản tin. In: Tạp Chí Khoa Học Giáo Dục Kỹ Thuật, Vietnamese. vol. 63, (2021)
+
+4. Bao, N., Q., Tuan, M., V., Trung, L., Q., Quyen, D., B., Hai, D., V.: Development of a Vietnamese Large Vocabulary Continuous Speech Recognition System under Noisy Conditions. In Proceedings of the Ninth International Symposium on Information and Communication Technology (SoICT 2018). Association for Computing Machinery, New York, NY, USA, 222–226, (2018). https://doi.org/10.1145/3287921.3287938
+
+5. [Conformer: Convolution-augmented Transformer for Speech Recognition](https://arxiv.org/abs/2005.08100)
+
+6. [Implementation reference](https://github.com/sooftware/conformer)
 
 ## 📄 License
 
