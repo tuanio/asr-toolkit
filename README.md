@@ -212,6 +212,12 @@ isbn="978-981-19-8069-5"
 
 5. [Conformer: Convolution-augmented Transformer for Speech Recognition](https://arxiv.org/abs/2005.08100)
 
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=tuanio/e2e-asr-toolkit&type=Date)](https://star-history.com/#tuanio/e2e-asr-toolkit&Date)
+
+
 6. [Implementation reference](https://github.com/sooftware/conformer)
 
 ## 📄 License
